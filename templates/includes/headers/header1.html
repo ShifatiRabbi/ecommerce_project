@@ -1,1 +1,56 @@
-
+{% load static i18n %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+    <div class="container">
+        <!-- Logo Left -->
+        <a class="navbar-brand" href="{% url 'core:home' %}">
+            <img src="{% static 'images/logo.png' %}" alt="{{ site_settings.site_name }}" height="40">
+        </a>
+        
+        <!-- Middle Menu -->
+        <div class="collapse navbar-collapse justify-content-center">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="{% url 'core:home' %}">{% trans "Home" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'shop:shop' %}">{% trans "Shop" %}</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'core:contact' %}">{% trans "Contact" %}</a></li>
+            </ul>
+        </div>
+        
+        <!-- Right Icons -->
+        <div class="d-flex align-items-center">
+            <!-- Language Switcher -->
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-globe"></i> {{ request.LANGUAGE_CODE|upper }}
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item change-language" data-lang="en">English</a></li>
+                    <li><a class="dropdown-item change-language" data-lang="bn">বাংলা</a></li>
+                </ul>
+            </div>
+            
+            <!-- Account -->
+            <div class="dropdown me-3">
+                <button class="btn btn-outline-secondary" data-bs-toggle="dropdown">
+                    <i class="fas fa-user"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    {% if user.is_authenticated %}
+                    <li><a class="dropdown-item" href="#">{% trans "My Account" %}</a></li>
+                    <li><a class="dropdown-item" href="#">{% trans "Logout" %}</a></li>
+                    {% else %}
+                    <li><a class="dropdown-item" href="#">{% trans "Login" %}</a></li>
+                    <li><a class="dropdown-item" href="#">{% trans "Register" %}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            
+            <!-- Cart -->
+            <a href="{% url 'cart:cart_detail' %}" class="btn btn-outline-primary position-relative">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                    {{ cart|length }}
+                </span>
+            </a>
+        </div>
+    </div>
+</nav>
