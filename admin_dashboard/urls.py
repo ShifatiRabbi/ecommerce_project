@@ -39,9 +39,9 @@ urlpatterns = [
     path('courier/api/', views.courier_api, name='courier_api'),
     
     # Payment
-    path('payment/sslcommerz/', views.sslcommerz_settings, name='sslcommerz_settings'),
-    path('payment/bkash/', views.bkash_settings, name='bkash_settings'),
-    path('payment/manual/', views.manual_payment_settings, name='manual_payment_settings'),
+    path('payment/sslcommerz/', views.sslcommerz_settings, name='ssl_commerz'),
+    path('payment/bkash/', views.bkash_settings, name='bkash_online'),
+    path('payment/manual/', views.manual_payment_settings, name='manual_payment'),
     
     # Employees
     path('employees/add/', views.add_employee, name='add_employee'),
@@ -54,36 +54,36 @@ urlpatterns = [
     path('customers/blocked/', views.blocked_customers, name='blocked_customers'),
     
     # Blogs
-    path('blogs/categories/', views.blog_categories, name='blog_categories'),
+    path('blogs/categories/', views.blog_categories, name='all_blog_categories'),
     path('blogs/categories/add/', views.add_blog_category, name='add_blog_category'),
     path('blogs/add/', views.add_blog, name='add_blog'),
-    path('blogs/list/', views.blog_list, name='blog_list'),
+    path('blogs/list/', views.blog_list, name='all_blogs'),
     
     # Marketing
     path('marketing/facebook/conversion-api/', views.facebook_conversion_api, name='facebook_conversion_api'),
-    path('marketing/facebook/messenger/', views.facebook_messenger, name='facebook_messenger'),
-    path('marketing/google/gtm/', views.google_gtm, name='google_gtm'),
-    path('marketing/google/ga4/', views.google_ga4, name='google_ga4'),
+    path('marketing/facebook/messenger/', views.facebook_messenger, name='messenger_integration'),
+    path('marketing/google/gtm/', views.google_gtm, name='google_tag_manager'),
+    path('marketing/google/ga4/', views.google_ga4, name='google_analytics'),
     path('marketing/seo/technical/', views.technical_seo, name='technical_seo'),
-    path('marketing/seo/onpage/', views.onpage_seo, name='onpage_seo'),
+    path('marketing/seo/onpage/', views.onpage_seo, name='one_page_seo'),
     path('marketing/sms/api/', views.sms_api, name='sms_api'),
-    path('marketing/sms/message/', views.sms_message, name='sms_message'),
+    path('marketing/sms/message/', views.sms_message, name='sms_message_writing'),
     path('marketing/live-chat/', views.live_chat, name='live_chat'),
-    path('marketing/integrations/', views.third_party_integrations, name='third_party_integrations'),
+    path('marketing/integrations/', views.third_party_integrations, name='third_party_integration'),
     
     # Manage Site
     path('manage/basic-settings/', views.basic_settings, name='basic_settings'),
-    path('manage/homepage-design/', views.homepage_design, name='homepage_design'),
+    path('manage/homepage-design/', views.homepage_design, name='home_page_design'),
     path('manage/header-design/', views.header_design, name='header_design'),
     path('manage/footer-design/', views.footer_design, name='footer_design'),
     path('manage/product-page-design/', views.product_page_design, name='product_page_design'),
     path('manage/order-tracking/', views.order_tracking, name='order_tracking'),
-    path('manage/checkout-design/', views.checkout_design, name='checkout_design'),
-    path('manage/thankyou-design/', views.thankyou_design, name='thankyou_design'),
+    path('manage/checkout-design/', views.checkout_design, name='checkout_page_design'),
+    path('manage/thankyou-design/', views.thankyou_design, name='thank_you_page'),
     path('manage/invoice-design/', views.invoice_design, name='invoice_design'),
     path('manage/custom-css/', views.custom_css, name='custom_css'),
     path('manage/custom-js/', views.custom_js, name='custom_js'),
-    path('manage/banners/', views.banner_list, name='banner_list'),
+    path('manage/banners/', views.banner_list, name='all_banners'),
     path('manage/banners/add/', views.add_banner, name='add_banner'),
     
     # Backend Customization
@@ -93,7 +93,7 @@ urlpatterns = [
     # Page Builder
     path('page-builder/create/', views.create_page, name='create_page'),
     path('page-builder/pages/', views.page_list, name='page_list'),
-    path('page-builder/landing/create/', views.create_landing_page, name='create_landing_page'),
+    path('page-builder/landing/create/', views.create_landing_page, name='landing_page'),
     path('page-builder/landing/list/', views.landing_page_list, name='landing_page_list'),
     path('page-builder/templates/', views.template_demo, name='template_demo'),
     

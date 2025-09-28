@@ -5,18 +5,21 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
+    <h1 class="h2">Dashboard Overview</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary">Today</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">Week</button>
-            <button type="button" class="btn btn-sm btn-outline-secondary">Month</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="today-btn">Today</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="week-btn">This Week</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="month-btn">This Month</button>
         </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-stats">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
     </div>
 </div>
 
 <!-- Stats Cards -->
-<div class="row">
+<div class="row" id="stats-cards">
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card dashboard-card border-left-primary shadow h-100 py-2">
             <div class="card-body">
@@ -45,7 +48,7 @@
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             Weekly Revenue
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="weekly-revenue">
                             ৳{{ weekly_revenue }}
                         </div>
                     </div>
@@ -85,7 +88,7 @@
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             Low Stock Products
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="low-stock-products">
                             {{ low_stock_products }}
                         </div>
                     </div>
@@ -102,12 +105,17 @@
 <div class="row">
     <div class="col-xl-8 col-lg-7">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Sales Overview</h6>
+                <select class="form-select form-select-sm" style="width: auto;" id="sales-period">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                </select>
             </div>
             <div class="card-body">
                 <div class="chart-container">
-                    <canvas id="salesChart"></canvas>
+                    <canvas id="salesChart" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -116,11 +124,11 @@
     <div class="col-xl-4 col-lg-5">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">Order Status</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Order Status Distribution</h6>
             </div>
             <div class="card-body">
                 <div class="chart-container">
-                    <canvas id="orderStatusChart"></canvas>
+                    <canvas id="orderStatusChart" height="300"></canvas>
                 </div>
             </div>
         </div>
@@ -131,12 +139,13 @@
 <div class="row">
     <div class="col-lg-8">
         <div class="card shadow mb-4">
-            <div class="card-header py-3">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
                 <h6 class="m-0 font-weight-bold text-primary">Recent Orders</h6>
+                <a href="{% url 'admin_dashboard:completed_orders' %}" class="btn btn-sm btn-primary">View All</a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Order #</th>
@@ -150,8 +159,11 @@
                         <tbody>
                             {% for order in recent_orders %}
                             <tr>
-                                <td>{{ order.order_number }}</td>
-                                <td>{{ order.full_name }}</td>
+                                <td><strong>{{ order.order_number }}</strong></td>
+                                <td>
+                                    <div>{{ order.full_name }}</div>
+                                    <small class="text-muted">{{ order.email }}</small>
+                                </td>
                                 <td>৳{{ order.total_amount }}</td>
                                 <td>
                                     <span class="status-badge status-{{ order.status }}">
@@ -161,8 +173,22 @@
                                 <td>{{ order.created_at|date:"M d, Y" }}</td>
                                 <td>
                                     <a href="{% url 'admin_dashboard:order_detail' order.id %}" 
-                                       class="btn btn-sm btn-info">View</a>
+                                       class="btn btn-sm btn-info" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <select class="form-select form-select-sm update-order-status" 
+                                            data-order-id="{{ order.id }}" style="width: 120px;">
+                                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                                        <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                    </select>
                                 </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No recent orders found</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -173,22 +199,29 @@
     </div>
 
     <div class="col-lg-4">
+        <!-- Top Selling Products -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Top Selling Products</h6>
             </div>
             <div class="card-body">
-                <div class="list-group">
+                <div class="list-group list-group-flush">
                     {% for product in top_products %}
                     <div class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ product.product__name }}
+                        <div>
+                            <div class="fw-bold">{{ product.product__name|truncatewords:3 }}</div>
+                            <small class="text-muted">Sold: {{ product.total_sold }}</small>
+                        </div>
                         <span class="badge bg-primary rounded-pill">{{ product.total_sold }}</span>
                     </div>
+                    {% empty %}
+                    <div class="text-center text-muted py-3">No sales data available</div>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
+        <!-- Quick Actions -->
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
@@ -196,14 +229,53 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <a href="{% url 'admin_dashboard:add_product' %}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Add Product
+                        <i class="fas fa-plus me-2"></i> Add New Product
                     </a>
                     <a href="{% url 'admin_dashboard:add_combo_offer' %}" class="btn btn-success">
-                        <i class="fas fa-tag"></i> Create Offer
+                        <i class="fas fa-tag me-2"></i> Create Special Offer
                     </a>
                     <a href="{% url 'admin_dashboard:inventory_list' %}" class="btn btn-warning">
-                        <i class="fas fa-boxes"></i> Manage Inventory
+                        <i class="fas fa-boxes me-2"></i> Manage Inventory
                     </a>
+                    <a href="{% url 'admin_dashboard:completed_orders' %}" class="btn btn-info">
+                        <i class="fas fa-shopping-cart me-2"></i> Process Orders
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">System Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Server Load</span>
+                        <span class="text-success">Normal</span>
+                    </div>
+                    <div class="progress mt-1" style="height: 5px;">
+                        <div class="progress-bar bg-success" style="width: 45%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Database</span>
+                        <span class="text-success">Online</span>
+                    </div>
+                    <div class="progress mt-1" style="height: 5px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between">
+                        <span>Storage</span>
+                        <span class="text-warning">65% Used</span>
+                    </div>
+                    <div class="progress mt-1" style="height: 5px;">
+                        <div class="progress-bar bg-warning" style="width: 65%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -213,26 +285,49 @@
 
 {% block extra_js %}
 <script>
-// Initialize dashboard charts
 document.addEventListener('DOMContentLoaded', function() {
     // Sales Chart
     const salesCtx = document.getElementById('salesChart').getContext('2d');
     const salesChart = new Chart(salesCtx, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+            labels: [{% for data in sales_data %}'{{ data.date }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
             datasets: [{
-                label: 'Sales',
-                data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                label: 'Sales (৳)',
+                data: [{% for data in sales_data %}{{ data.sales }}{% if not forloop.last %}, {% endif %}{% endfor %}],
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.1)',
                 tension: 0.4,
-                fill: true
+                fill: true,
+                borderWidth: 2
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        drawBorder: false
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '৳' + value.toLocaleString();
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
         }
     });
 
@@ -243,21 +338,154 @@ document.addEventListener('DOMContentLoaded', function() {
         data: {
             labels: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
             datasets: [{
-                data: [12, 19, 3, 5, 2],
+                data: [{{ pending_orders }}, 8, 5, 12, 2],
                 backgroundColor: [
                     '#ffc107',
                     '#17a2b8',
                     '#007bff',
                     '#28a745',
                     '#dc3545'
-                ]
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: {
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 20
+                    }
+                }
+            }
         }
     });
+
+    // Update stats on period change
+    $('#sales-period').on('change', function() {
+        const period = $(this).val();
+        // Implement AJAX call to update chart data based on period
+        console.log('Period changed to:', period);
+    });
+
+    // Refresh stats
+    $('#refresh-stats').on('click', function() {
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Refreshing...');
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:get_order_stats" %}',
+            type: 'GET',
+            success: function(data) {
+                $('#today-orders').text(data.today_orders);
+                $('#pending-orders').text(data.pending_orders);
+                $('#weekly-revenue').text('৳' + data.total_revenue.toLocaleString());
+                
+                // Show success notification
+                showNotification('Stats updated successfully!', 'success');
+            },
+            complete: function() {
+                setTimeout(function() {
+                    btn.prop('disabled', false).html('<i class="fas fa-sync-alt"></i> Refresh');
+                }, 1000);
+            }
+        });
+    });
+
+    // Period buttons
+    $('#today-btn').on('click', function() {
+        $('.btn-group .btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        // Implement today's data fetch
+    });
+
+    $('#week-btn').on('click', function() {
+        $('.btn-group .btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        // Implement week's data fetch
+    });
+
+    $('#month-btn').on('click', function() {
+        $('.btn-group .btn').removeClass('btn-primary').addClass('btn-outline-secondary');
+        $(this).removeClass('btn-outline-secondary').addClass('btn-primary');
+        // Implement month's data fetch
+    });
+
+    // Order status update
+    $('.update-order-status').on('change', function() {
+        const orderId = $(this).data('order-id');
+        const newStatus = $(this).val();
+        const select = $(this);
+        
+        select.prop('disabled', true);
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:update_order_status" %}',
+            type: 'POST',
+            data: {
+                'order_id': orderId,
+                'status': newStatus,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Order status updated to ' + response.new_status, 'success');
+                    // Update the badge visually
+                    const badge = select.closest('tr').find('.status-badge');
+                    badge.removeClass().addClass('status-badge status-' + newStatus).text(response.new_status);
+                } else {
+                    showNotification('Error updating order status', 'error');
+                    select.val(select.data('previous-value'));
+                }
+            },
+            error: function() {
+                showNotification('Error updating order status', 'error');
+                select.val(select.data('previous-value'));
+            },
+            complete: function() {
+                select.prop('disabled', false);
+            }
+        });
+    });
+
+    // Store previous value on focus
+    $('.update-order-status').on('focus', function() {
+        $(this).data('previous-value', $(this).val());
+    });
+
+    // Notification function
+    function showNotification(message, type = 'info') {
+        const alertClass = type === 'error' ? 'alert-danger' : 
+                          type === 'success' ? 'alert-success' : 'alert-info';
+        
+        const notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                             '<i class="fas fa-' + (type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info') + ' me-2"></i>' +
+                             message +
+                             '<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>');
+        
+        // Remove existing notifications
+        $('.alert-dismissible').alert('close');
+        
+        // Add new notification
+        $('.messages-container').html(notification);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(function() {
+            notification.alert('close');
+        }, 5000);
+    }
+
+    // Auto-refresh stats every 2 minutes
+    setInterval(function() {
+        if (!$('#refresh-stats').prop('disabled')) {
+            $('#refresh-stats').click();
+        }
+    }, 120000);
 });
 </script>
 {% endblock %}

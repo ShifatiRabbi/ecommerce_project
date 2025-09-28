@@ -1,0 +1,114 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Order #{{ order.order_number }} - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Order #{{ order.order_number }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-secondary me-2" onclick="window.print()">
+            <i class="fas fa-print me-1"></i> Print
+        </button>
+        <a href="{% url 'admin_dashboard:completed_orders' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Orders
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Order Items</h5>
+                <span class="badge bg-{% if order.status == 'delivered' %}success{% elif order.status == 'cancelled' %}danger{% else %}warning{% endif %}">
+                    {{ order.get_status_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Price</th>
+                                <th>Quantity</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in order_items %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.product.images.first.image.url }}" 
+                                             alt="{{ item.product.name }}" 
+                                             class="rounded me-3" width="40" height="40"
+                                             onerror="this.src='{% static 'images/placeholder-product.png' %}'">
+                                        <div>
+                                            <div class="fw-bold">{{ item.product.name }}</div>
+                                            <small class="text-muted">SKU: {{ item.product.sku }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>৳{{ item.price }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>৳{{ item.total_price }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Order Summary</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Subtotal:</span>
+                    <span>৳{{ order.total_amount }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Shipping:</span>
+                    <span>৳0.00</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Tax:</span>
+                    <span>৳0.00</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between mb-2 fw-bold">
+                    <span>Total:</span>
+                    <span>৳{{ order.total_amount }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Update Status</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <select class="form-select" name="status">
+                            {% for status_value, status_label in order.STATUS_CHOICES %}
+                            <option value="{{ status_value }}" {% if order.status == status_value %}selected{% endif %}>
+                                {{ status_label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,27 +1,49 @@
 {% extends 'admin_dashboard/base.html' %}
 {% load static %}
 
-{% block title %}Product List - Admin Panel{% endblock %}
+{% block title %}Product Management - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.product-image {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.status-badge {
+    font-size: 0.75rem;
+}
+.actions-column {
+    width: 150px;
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Product List</h1>
+    <h1 class="h2">Product Management</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <a href="{% url 'admin_dashboard:add_product' %}" class="btn btn-sm btn-primary">
-            <i class="fas fa-plus"></i> Add Product
+            <i class="fas fa-plus me-1"></i> Add New Product
+        </a>
+        <a href="{% url 'admin_dashboard:product_reporting' %}" class="btn btn-sm btn-info ms-2">
+            <i class="fas fa-chart-bar me-1"></i> Reports
         </a>
     </div>
 </div>
 
-<!-- Filters -->
+<!-- Filters and Search -->
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3">
-            <div class="col-md-4">
-                <input type="text" name="search" class="form-control" placeholder="Search products..." 
-                       value="{{ request.GET.search }}">
-            </div>
+        <form method="get" class="row g-3 align-items-end">
             <div class="col-md-3">
+                <label class="form-label">Search Products</label>
+                <input type="text" name="search" class="form-control" placeholder="Name or SKU..." 
+                       value="{{ request.GET.search }}" id="search-input">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category</label>
                 <select name="category" class="form-select">
                     <option value="">All Categories</option>
                     {% for category in categories %}
@@ -31,9 +53,32 @@
                     {% endfor %}
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Stock Status</label>
+                <select name="stock" class="form-select">
+                    <option value="">All Stock</option>
+                    <option value="low" {% if request.GET.stock == 'low' %}selected{% endif %}>Low Stock</option>
+                    <option value="out" {% if request.GET.stock == 'out' %}selected{% endif %}>Out of Stock</option>
+                </select>
+            </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary">Filter</button>
-                <a href="{% url 'admin_dashboard:product_list' %}" class="btn btn-secondary">Reset</a>
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+                <a href="{% url 'admin_dashboard:product_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-redo me-1"></i> Reset
+                </a>
+                <button type="button" class="btn btn-success ms-2" id="export-btn">
+                    <i class="fas fa-file-export me-1"></i> Export
+                </button>
             </div>
         </form>
     </div>
@@ -41,63 +86,137 @@
 
 <!-- Products Table -->
 <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Product List ({{ products.paginator.count }} products)</h5>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="toggle-inactive">
+            <label class="form-check-label" for="toggle-inactive">Show Inactive</label>
+        </div>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped data-table">
-                <thead>
+            <table class="table table-hover table-striped" id="products-table">
+                <thead class="table-light">
                     <tr>
-                        <th>Image</th>
-                        <th>Name</th>
+                        <th width="80">Image</th>
+                        <th>Product Name</th>
                         <th>SKU</th>
                         <th>Category</th>
                         <th>Price</th>
                         <th>Stock</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th>Featured</th>
+                        <th class="actions-column">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for product in products %}
-                    <tr>
+                    <tr class="{% if not product.is_active %}table-secondary{% endif %}" 
+                        data-status="{% if product.is_active %}active{% else %}inactive{% endif %}"
+                        data-stock="{{ product.inventory.stock_quantity }}">
                         <td>
                             {% if product.images.first %}
                             <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" 
-                                 style="width: 50px; height: 50px; object-fit: cover;">
+                                 class="product-image" onerror="this.src='{% static 'images/placeholder-product.png' %}'">
                             {% else %}
-                            <div class="bg-light d-flex align-items-center justify-content-center" 
-                                 style="width: 50px; height: 50px;">
+                            <div class="product-image bg-light d-flex align-items-center justify-content-center">
                                 <i class="fas fa-image text-muted"></i>
                             </div>
                             {% endif %}
                         </td>
-                        <td>{{ product.name }}</td>
-                        <td>{{ product.sku }}</td>
-                        <td>{{ product.category.name }}</td>
-                        <td>৳{{ product.price }}</td>
                         <td>
-                            {% with inventory=product.inventory %}
-                            <span class="{% if inventory.stock_quantity <= inventory.low_stock_threshold %}text-danger{% endif %}">
-                                {{ inventory.stock_quantity }}
-                            </span>
-                            {% endwith %}
+                            <div class="fw-bold">{{ product.name }}</div>
+                            {% if product.name_bn %}
+                            <small class="text-muted d-block">{{ product.name_bn }}</small>
+                            {% endif %}
                         </td>
                         <td>
-                            <span class="badge {% if product.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                            <code>{{ product.sku }}</code>
+                        </td>
+                        <td>{{ product.category.name }}</td>
+                        <td>
+                            <div class="fw-bold text-primary">৳{{ product.price }}</div>
+                            {% if product.compare_price %}
+                            <small class="text-muted text-decoration-line-through">৳{{ product.compare_price }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span class="{% if product.inventory.stock_quantity <= product.inventory.low_stock_threshold %}text-danger fw-bold{% endif %}">
+                                    {{ product.inventory.stock_quantity }}
+                                </span>
+                                {% if product.inventory.stock_quantity <= product.inventory.low_stock_threshold %}
+                                <i class="fas fa-exclamation-triangle text-danger ms-2" title="Low Stock"></i>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.is_active %}bg-success{% else %}bg-secondary{% endif %} status-badge">
                                 {% if product.is_active %}Active{% else %}Inactive{% endif %}
                             </span>
                         </td>
                         <td>
-                            <div class="btn-group">
-                                <a href="#" class="btn btn-sm btn-info" title="View">
+                            {% if product.is_featured %}
+                            <i class="fas fa-star text-warning" title="Featured Product"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'shop:product_detail' product.slug %}" 
+                                   class="btn btn-outline-info" title="View on Site" target="_blank">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="#" class="btn btn-sm btn-warning" title="Edit">
+                                <a href="#" class="btn btn-outline-warning" title="Edit Product" 
+                                   data-bs-toggle="modal" data-bs-target="#editProductModal" 
+                                   data-product-id="{{ product.id }}">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="#" class="btn btn-sm btn-danger" title="Delete">
+                                <button class="btn btn-outline-danger delete-product" 
+                                        title="Delete Product" data-product-id="{{ product.id }}"
+                                        data-product-name="{{ product.name }}">
                                     <i class="fas fa-trash"></i>
-                                </a>
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                            data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="#">
+                                                <i class="fas fa-copy me-2"></i>Duplicate
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item toggle-featured" href="#" 
+                                               data-product-id="{{ product.id }}">
+                                                <i class="fas fa-star me-2"></i>
+                                                {% if product.is_featured %}Unfeature{% else %}Feature{% endif %}
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item toggle-status" href="#" 
+                                               data-product-id="{{ product.id }}"
+                                               data-current-status="{{ product.is_active }}">
+                                                <i class="fas fa-power-off me-2"></i>
+                                                {% if product.is_active %}Deactivate{% else %}Activate{% endif %}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No products found</h5>
+                            <p class="text-muted">Try adjusting your filters or add a new product.</p>
+                            <a href="{% url 'admin_dashboard:add_product' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Add Your First Product
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}
@@ -107,23 +226,31 @@
         
         <!-- Pagination -->
         {% if products.has_other_pages %}
-        <nav aria-label="Page navigation">
+        <nav aria-label="Product pagination" class="mt-4">
             <ul class="pagination justify-content-center">
                 {% if products.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                    <a class="page-link" href="?page={{ products.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
                 </li>
                 {% endif %}
                 
                 {% for i in products.paginator.page_range %}
-                <li class="page-item {% if products.number == i %}active{% endif %}">
-                    <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
-                </li>
+                    {% if products.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
                 {% endfor %}
                 
                 {% if products.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                    <a class="page-link" href="?page={{ products.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
                 </li>
                 {% endif %}
             </ul>
@@ -131,21 +258,295 @@
         {% endif %}
     </div>
 </div>
+
+<!-- Quick Edit Modal -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Edit Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quick-edit-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Product Name</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">SKU</label>
+                                <input type="text" class="form-control" name="sku" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Price (৳)</label>
+                                <input type="number" class="form-control" name="price" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Compare Price (৳)</label>
+                                <input type="number" class="form-control" name="compare_price" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stock Quantity</label>
+                        <input type="number" class="form-control" name="stock_quantity" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_active" id="edit-is-active">
+                                <label class="form-check-label" for="edit-is-active">Active Product</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="is_featured" id="edit-is-featured">
+                                <label class="form-check-label" for="edit-is-featured">Featured Product</label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-quick-edit">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="delete-product-name"></strong>?</p>
+                <p class="text-danger"><small>This action cannot be undone. All product data including images will be permanently deleted.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete">Delete Product</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 $(document).ready(function() {
-    // Initialize DataTable
-    $('.data-table').DataTable({
-        responsive: true,
-        pageLength: 25,
-        ordering: true,
-        language: {
-            search: "_INPUT_",
-            searchPlaceholder: "Search products..."
+    // Toggle inactive products
+    $('#toggle-inactive').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('tr[data-status="inactive"]').show();
+        } else {
+            $('tr[data-status="inactive"]').hide();
+        }
+    });
+
+    // Quick edit modal
+    $('#editProductModal').on('show.bs.modal', function(event) {
+        const button = $(event.relatedTarget);
+        const productId = button.data('product-id');
+        
+        // Load product data via AJAX
+        $.ajax({
+            url: `/admin-dashboard/ajax/get-product/${productId}/`,
+            type: 'GET',
+            success: function(product) {
+                $('#quick-edit-form input[name="name"]').val(product.name);
+                $('#quick-edit-form input[name="sku"]').val(product.sku);
+                $('#quick-edit-form input[name="price"]').val(product.price);
+                $('#quick-edit-form input[name="compare_price"]').val(product.compare_price);
+                $('#quick-edit-form input[name="stock_quantity"]').val(product.inventory.stock_quantity);
+                $('#quick-edit-form input[name="is_active"]').prop('checked', product.is_active);
+                $('#quick-edit-form input[name="is_featured"]').prop('checked', product.is_featured);
+                
+                $('#quick-edit-form').data('product-id', productId);
+            }
+        });
+    });
+
+    // Save quick edit
+    $('#save-quick-edit').on('click', function() {
+        const productId = $('#quick-edit-form').data('product-id');
+        const formData = $('#quick-edit-form').serialize();
+        
+        $.ajax({
+            url: `/admin-dashboard/ajax/update-product/${productId}/`,
+            type: 'POST',
+            data: formData + '&csrfmiddlewaretoken={{ csrf_token }}',
+            success: function(response) {
+                if (response.success) {
+                    $('#editProductModal').modal('hide');
+                    showNotification('Product updated successfully!', 'success');
+                    // Reload the page to reflect changes
+                    setTimeout(() => location.reload(), 1000);
+                }
+            }
+        });
+    });
+
+    // Delete product
+    let productToDelete = null;
+    
+    $('.delete-product').on('click', function() {
+        productToDelete = $(this).data('product-id');
+        $('#delete-product-name').text($(this).data('product-name'));
+        $('#deleteProductModal').modal('show');
+    });
+
+    $('#confirm-delete').on('click', function() {
+        if (productToDelete) {
+            $.ajax({
+                url: `/admin-dashboard/ajax/delete-product/${productToDelete}/`,
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#deleteProductModal').modal('hide');
+                        showNotification('Product deleted successfully!', 'success');
+                        // Remove the row from table
+                        $(`button[data-product-id="${productToDelete}"]`).closest('tr').fadeOut();
+                    }
+                }
+            });
+        }
+    });
+
+    // Toggle product status
+    $('.toggle-status').on('click', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const productId = button.data('product-id');
+        const currentStatus = button.data('current-status');
+        const newStatus = !currentStatus;
+        
+        $.ajax({
+            url: `/admin-dashboard/ajax/toggle-product-status/${productId}/`,
+            type: 'POST',
+            data: {
+                'is_active': newStatus,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    button.data('current-status', newStatus);
+                    button.html(
+                        newStatus ? 
+                        '<i class="fas fa-power-off me-2"></i>Deactivate' : 
+                        '<i class="fas fa-power-off me-2"></i>Activate'
+                    );
+                    
+                    // Update the status badge
+                    const badge = button.closest('tr').find('.status-badge');
+                    if (newStatus) {
+                        badge.removeClass('bg-secondary').addClass('bg-success').text('Active');
+                        button.closest('tr').removeClass('table-secondary');
+                    } else {
+                        badge.removeClass('bg-success').addClass('bg-secondary').text('Inactive');
+                        button.closest('tr').addClass('table-secondary');
+                    }
+                    
+                    showNotification('Product status updated!', 'success');
+                }
+            }
+        });
+    });
+
+    // Toggle featured status
+    $('.toggle-featured').on('click', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const productId = button.data('product-id');
+        
+        $.ajax({
+            url: `/admin-dashboard/ajax/toggle-featured/${productId}/`,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Featured status updated!', 'success');
+                    setTimeout(() => location.reload(), 500);
+                }
+            }
+        });
+    });
+
+    // Export functionality
+    $('#export-btn').on('click', function() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('export', 'csv');
+        window.location.href = '{% url "admin_dashboard:product_list" %}?' + params.toString();
+    });
+
+    // Real-time search
+    let searchTimeout;
+    $('#search-input').on('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+            $(this).closest('form').submit();
+        }, 500);
+    });
+
+    // Keyboard shortcuts
+    $(document).on('keydown', function(e) {
+        // Ctrl + N for new product
+        if (e.ctrlKey && e.key === 'n') {
+            e.preventDefault();
+            window.location.href = '{% url "admin_dashboard:add_product" %}';
+        }
+        
+        // Ctrl + F for search
+        if (e.ctrlKey && e.key === 'f') {
+            e.preventDefault();
+            $('#search-input').focus();
+        }
+    });
+
+    // Show keyboard shortcuts help
+    $(document).on('keydown', function(e) {
+        if (e.ctrlKey && e.key === '/') {
+            e.preventDefault();
+            alert('Keyboard Shortcuts:\n\nCtrl + N - New Product\nCtrl + F - Search\nCtrl + / - This help');
         }
     });
 });
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
 </script>
 {% endblock %}
