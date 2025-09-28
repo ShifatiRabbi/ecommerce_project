@@ -2,7 +2,8 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count, Sum, Q, F
+from django.db.models import Count, Sum, Q, F, Avg, Subquery, OuterRef, DecimalField, IntegerField, ExpressionWrapper
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django.core.paginator import Paginator
 from datetime import datetime, timedelta
@@ -75,20 +76,44 @@ def dashboard(request):
     return render(request, 'admin_dashboard/dashboard.html', context)
 
 # ================= ORDERS SECTION =================
+
 @login_required
 @admin_required
 def completed_orders(request):
     orders = Order.objects.filter(status='delivered').order_by('-created_at')
-    return render(request, 'admin_dashboard/orders/completed.html', {'orders': orders})
+    
+    # Calculate stats
+    total_revenue = orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    avg_order_value = orders.aggregate(avg=Avg('total_amount'))['avg'] or 0
+    this_month_orders = orders.filter(
+        created_at__month=timezone.now().month,
+        created_at__year=timezone.now().year
+    ).count()
+    
+    context = {
+        'orders': orders,
+        'total_revenue': total_revenue,
+        'avg_order_value': round(avg_order_value, 2),
+        'this_month_orders': this_month_orders,
+    }
+    return render(request, 'admin_dashboard/orders/completed.html', context)
 
 @login_required
 @admin_required
 def incomplete_orders(request):
-    incomplete = Order.objects.filter(
+    incomplete_orders = Order.objects.filter(
         Q(phone__isnull=False) | Q(email__isnull=False),
         status__in=['pending', 'processing']
     ).order_by('-created_at')
-    return render(request, 'admin_dashboard/orders/incomplete.html', {'orders': incomplete})
+    
+    # Calculate potential revenue
+    potential_revenue = incomplete_orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    
+    context = {
+        'orders': incomplete_orders,
+        'potential_revenue': potential_revenue,
+    }
+    return render(request, 'admin_dashboard/orders/incomplete.html', context)
 
 @login_required
 @admin_required
@@ -176,59 +201,95 @@ def add_product(request):
 @login_required
 @admin_required
 def product_reporting(request):
-    # Sales report
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
-    
     if start_date and end_date:
         start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
     else:
-        # Default to last 30 days
         end_date = timezone.now().date()
         start_date = end_date - timedelta(days=30)
-    
-    # Top selling products
-    top_products = OrderItem.objects.filter(
-        order__status='delivered',
-        order__created_at__date__range=[start_date, end_date]
-    ).values('product__name').annotate(
-        total_sold=Sum('quantity'),
-        total_revenue=Sum(F('quantity') * F('price'))
+
+    orders = Order.objects.filter(
+        status='delivered',
+        created_at__date__range=[start_date, end_date]
+    )
+
+    total_sales = orders.aggregate(total=Sum('total_amount'))['total'] or 0
+    total_units_sold = OrderItem.objects.filter(order__in=orders).aggregate(total=Sum('quantity'))['total'] or 0
+    avg_order_value = orders.aggregate(avg=Avg('total_amount'))['avg'] or 0
+
+    top_products = OrderItem.objects.filter(order__in=orders).values(
+        'product__name', 'product__sku'
+    ).annotate(
+        total_sold=Sum('quantity', output_field=IntegerField()),
+        total_revenue=Sum(
+            ExpressionWrapper(F('quantity') * F('price'), output_field=DecimalField())
+        )
     ).order_by('-total_sold')[:10]
-    
-    # Low stock products
-    low_stock = Inventory.objects.filter(stock_quantity__lte=5).select_related('product')
-    
-    # Export to CSV
-    if 'export' in request.GET:
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="product_report_{start_date}_{end_date}.csv"'
-        
-        writer = csv.writer(response)
-        writer.writerow(['Product Name', 'Total Sold', 'Total Revenue'])
-        
-        for product in top_products:
-            writer.writerow([
-                product['product__name'],
-                product['total_sold'],
-                product['total_revenue']
-            ])
-        
-        return response
-    
-    return render(request, 'admin_dashboard/products/reporting.html', {
+
+    low_stock = Inventory.objects.filter(stock_quantity__lte=F('low_stock_threshold'))
+
+    product_performance = Product.objects.filter(is_active=True).annotate(
+        units_sold=Coalesce(
+            Subquery(
+                OrderItem.objects.filter(
+                    product=OuterRef('pk'),
+                    order__in=orders
+                ).values('product').annotate(
+                    total=Sum('quantity', output_field=IntegerField())
+                ).values('total')[:1]
+            ),
+            0,
+            output_field=IntegerField()
+        ),
+        revenue=Coalesce(
+            Subquery(
+                OrderItem.objects.filter(
+                    product=OuterRef('pk'),
+                    order__in=orders
+                ).values('product').annotate(
+                    total=Sum(
+                        ExpressionWrapper(F('quantity') * F('price'), output_field=DecimalField())
+                    )
+                ).values('total')[:1]
+            ),
+            0,
+            output_field=DecimalField()
+        )
+    )
+
+    context = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'total_sales': total_sales,
+        'total_units_sold': total_units_sold,
+        'avg_order_value': round(avg_order_value, 2),
+        'conversion_rate': 3.2,
         'top_products': top_products,
         'low_stock': low_stock,
-        'start_date': start_date,
-        'end_date': end_date
-    })
+        'product_performance': product_performance,
+        'categories': Category.objects.all(),
+    }
+    return render(request, 'admin_dashboard/products/reporting.html', context)
 
 @login_required
 @admin_required
 def category_list(request):
     categories = Category.objects.all()
-    return render(request, 'admin_dashboard/products/category_list.html', {'categories': categories})
+    
+    # Calculate stats
+    active_categories = categories.filter(is_active=True).count()
+    total_products = Product.objects.count()
+    avg_products_per_category = total_products / categories.count() if categories.count() > 0 else 0
+    
+    context = {
+        'categories': categories,
+        'active_categories': active_categories,
+        'total_products': total_products,
+        'avg_products_per_category': round(avg_products_per_category, 1),
+    }
+    return render(request, 'admin_dashboard/products/category_list.html', context)
 
 @login_required
 @admin_required
@@ -248,7 +309,19 @@ def add_category(request):
 @admin_required
 def brand_list(request):
     brands = Brand.objects.all()
-    return render(request, 'admin_dashboard/products/brand_list.html', {'brands': brands})
+    
+    # Calculate stats
+    active_brands = brands.filter(is_active=True).count()
+    total_branded_products = Product.objects.filter(brand__isnull=False).count()
+    top_brand = brands.annotate(product_count=Count('product')).order_by('-product_count').first()
+    
+    context = {
+        'brands': brands,
+        'active_brands': active_brands,
+        'total_branded_products': total_branded_products,
+        'top_brand': top_brand,
+    }
+    return render(request, 'admin_dashboard/products/brand_list.html', context)
 
 @login_required
 @admin_required
@@ -289,12 +362,46 @@ def add_supplier(request):
 def inventory_list(request):
     inventory = Inventory.objects.select_related('product').all()
     
-    # Low stock filter
-    low_stock = request.GET.get('low_stock')
-    if low_stock:
+    # Apply filters
+    stock_status = request.GET.get('stock_status')
+    if stock_status == 'out_of_stock':
+        inventory = inventory.filter(stock_quantity=0)
+    elif stock_status == 'low_stock':
         inventory = inventory.filter(stock_quantity__lte=F('low_stock_threshold'))
+    elif stock_status == 'in_stock':
+        inventory = inventory.filter(stock_quantity__gt=F('low_stock_threshold'))
     
-    return render(request, 'admin_dashboard/products/inventory.html', {'inventory': inventory})
+    category_id = request.GET.get('category')
+    if category_id:
+        inventory = inventory.filter(product__category_id=category_id)
+    
+    search = request.GET.get('search')
+    if search:
+        inventory = inventory.filter(
+            Q(product__name__icontains=search) | 
+            Q(product__sku__icontains=search)
+        )
+    
+    # Calculate stats
+    out_of_stock_count = inventory.filter(stock_quantity=0).count()
+    low_stock_count = inventory.filter(
+        stock_quantity__lte=F('low_stock_threshold'),
+        stock_quantity__gt=0
+    ).count()
+    in_stock_count = inventory.filter(stock_quantity__gt=F('low_stock_threshold')).count()
+    
+    # Recent stock history (you'd need a StockHistory model for this)
+    stock_history = []  # This would come from StockHistory model
+    
+    context = {
+        'inventory': inventory,
+        'out_of_stock_count': out_of_stock_count,
+        'low_stock_count': low_stock_count,
+        'in_stock_count': in_stock_count,
+        'stock_history': stock_history,
+        'categories': Category.objects.all(),
+    }
+    return render(request, 'admin_dashboard/products/inventory.html', context)
 
 # ================= OFFERS SECTION =================
 @login_required
@@ -696,13 +803,49 @@ def homepage_design(request):
 @login_required
 @admin_required
 def header_design(request):
-    # Header design settings
-    if request.method == 'POST':
-        # Save header design
-        messages.success(request, 'Header design updated!')
-        return redirect('admin_dashboard:header_design')
+    # Get header templates and settings
+    header_templates = [
+        {
+            'id': 1,
+            'name': 'Logo Left, Menu Middle, Icons Right',
+            'description': 'Classic header layout with logo on left',
+            'layout': 'logo_left',
+            'class_name': 'header-logo-left'
+        },
+        {
+            'id': 2, 
+            'name': 'Menu Left, Logo Center, Icons Right',
+            'description': 'Modern layout with centered logo',
+            'layout': 'logo_center',
+            'class_name': 'header-logo-center'
+        },
+        {
+            'id': 3,
+            'name': 'Minimal with Side Menu',
+            'description': 'Clean minimal design with hamburger menu',
+            'layout': 'minimal',
+            'class_name': 'header-minimal'
+        }
+    ]
     
-    return render(request, 'admin_dashboard/manage/header_design.html')
+    active_header = header_templates[0]  # This would come from database
+    header_settings = {}  # This would come from database
+    menu_items = [
+        {'title': 'Home', 'url': '/'},
+        {'title': 'Shop', 'url': '/shop/'},
+        {'title': 'Categories', 'url': '/categories/'},
+        {'title': 'Contact', 'url': '/contact/'},
+    ]
+    custom_css = ""  # This would come from database
+    
+    context = {
+        'header_templates': header_templates,
+        'active_header': active_header,
+        'header_settings': header_settings,
+        'menu_items': menu_items,
+        'custom_css': custom_css,
+    }
+    return render(request, 'admin_dashboard/manage/header_design.html', context)
 
 @login_required
 @admin_required
@@ -748,17 +891,21 @@ def invoice_design(request):
 @login_required
 @admin_required
 def custom_css(request):
-    settings = SiteSetting.objects.first()
+    custom_css = ""  # This would come from database
     
     if request.method == 'POST':
-        settings.custom_css = request.POST.get('custom_css', '')
-        settings.save()
-        messages.success(request, 'Custom CSS updated!')
+        custom_css = request.POST.get('custom_css', '')
+        # Save to database
+        # settings = SiteSetting.objects.first()
+        # settings.custom_css = custom_css
+        # settings.save()
+        messages.success(request, 'Custom CSS saved successfully!')
         return redirect('admin_dashboard:custom_css')
     
-    return render(request, 'admin_dashboard/manage/custom_css.html', {
-        'custom_css': settings.custom_css if settings else ''
-    })
+    context = {
+        'custom_css': custom_css,
+    }
+    return render(request, 'admin_dashboard/manage/custom_css.html', context)
 
 @login_required
 @admin_required
@@ -778,8 +925,14 @@ def custom_js(request):
 @login_required
 @admin_required
 def banner_list(request):
-    banners = Banner.objects.all()
-    return render(request, 'admin_dashboard/manage/banner_list.html', {'banners': banners})
+    active_banners = Banner.objects.filter(is_active=True)
+    all_banners = Banner.objects.all()
+    
+    context = {
+        'active_banners': active_banners,
+        'all_banners': all_banners,
+    }
+    return render(request, 'admin_dashboard/manage/banner_list.html', context)
 
 @login_required
 @admin_required

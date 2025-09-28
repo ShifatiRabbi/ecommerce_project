@@ -1,0 +1,531 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Inventory Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Inventory Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-primary" id="bulk-update">
+                <i class="fas fa-edit me-1"></i> Bulk Update
+            </button>
+            <button class="btn btn-sm btn-outline-success" id="export-inventory">
+                <i class="fas fa-file-export me-1"></i> Export
+            </button>
+        </div>
+        <a href="{% url 'admin_dashboard:product_list' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Product
+        </a>
+    </div>
+</div>
+
+<!-- Inventory Alerts -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Out of Stock</h6>
+                        <h3 class="mb-0">{{ out_of_stock_count }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Low Stock</h6>
+                        <h3 class="mb-0">{{ low_stock_count }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-box fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">In Stock</h6>
+                        <h3 class="mb-0">{{ in_stock_count }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Stock Status</label>
+                <select class="form-select" name="stock_status" id="stock-status-filter">
+                    <option value="">All Status</option>
+                    <option value="out_of_stock" {% if request.GET.stock_status == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+                    <option value="low_stock" {% if request.GET.stock_status == 'low_stock' %}selected{% endif %}>Low Stock</option>
+                    <option value="in_stock" {% if request.GET.stock_status == 'in_stock' %}selected{% endif %}>In Stock</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category" id="category-filter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Search</label>
+                <input type="text" class="form-control" name="search" placeholder="Product name or SKU..."
+                       value="{{ request.GET.search }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Inventory Table -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Inventory List</h5>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="show-low-stock-only">
+            <label class="form-check-label" for="show-low-stock-only">Show Low Stock Only</label>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="inventory-table">
+                <thead>
+                    <tr>
+                        <th width="50">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="select-all-inventory">
+                            </div>
+                        </th>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Current Stock</th>
+                        <th>Low Stock Threshold</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory %}
+                    <tr class="inventory-row {% if item.stock_quantity == 0 %}table-danger{% elif item.stock_quantity <= item.low_stock_threshold %}table-warning{% endif %}"
+                        data-stock-status="{% if item.stock_quantity == 0 %}out_of_stock{% elif item.stock_quantity <= item.low_stock_threshold %}low_stock{% else %}in_stock{% endif %}">
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input select-inventory" type="checkbox" value="{{ item.id }}">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if item.product.images.first %}
+                                <img src="{{ item.product.images.first.image.url }}" 
+                                     class="product-image-small me-3"
+                                     onerror="this.src='{% static 'images/placeholder-product.png' %}'">
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold">{{ item.product.name }}</div>
+                                    <small class="text-muted">{{ item.product.category.name }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <code>{{ item.product.sku }}</code>
+                        </td>
+                        <td>{{ item.product.category.name }}</td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm stock-input" 
+                                   value="{{ item.stock_quantity }}" min="0"
+                                   data-inventory-id="{{ item.id }}"
+                                   style="width: 80px;">
+                        </td>
+                        <td>
+                            <input type="number" class="form-control form-control-sm threshold-input" 
+                                   value="{{ item.low_stock_threshold }}" min="1"
+                                   data-inventory-id="{{ item.id }}"
+                                   style="width: 80px;">
+                        </td>
+                        <td>
+                            {% if item.stock_quantity == 0 %}
+                            <span class="badge bg-danger">Out of Stock</span>
+                            {% elif item.stock_quantity <= item.low_stock_threshold %}
+                            <span class="badge bg-warning">Low Stock</span>
+                            {% else %}
+                            <span class="badge bg-success">In Stock</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">{{ item.updated_at|timesince }} ago</small>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary quick-restock"
+                                        data-inventory-id="{{ item.id }}"
+                                        data-product-name="{{ item.product.name }}">
+                                    <i class="fas fa-plus"></i> Restock
+                                </button>
+                                <button class="btn btn-sm btn-outline-info view-product"
+                                        data-product-id="{{ item.product.id }}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-boxes fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Inventory Items</h5>
+                                <p class="text-muted">No products found matching your criteria.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bulk Actions -->
+        <div class="bulk-actions mt-3 p-3 bg-light rounded d-none" id="inventory-bulk-actions">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="selected-inventory-count">0</span> items selected
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-primary" id="bulk-restock">
+                        <i class="fas fa-plus me-1"></i> Bulk Restock
+                    </button>
+                    <button class="btn btn-sm btn-outline-success" id="bulk-update-threshold">
+                        <i class="fas fa-edit me-1"></i> Update Threshold
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" id="bulk-delete">
+                        <i class="fas fa-trash me-1"></i> Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock History -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Recent Stock Changes</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Product</th>
+                        <th>Change</th>
+                        <th>New Stock</th>
+                        <th>Reason</th>
+                        <th>User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for history in stock_history %}
+                    <tr>
+                        <td>{{ history.created_at|date:"M d, Y H:i" }}</td>
+                        <td>{{ history.product.name }}</td>
+                        <td>
+                            <span class="badge bg-{% if history.change > 0 %}success{% else %}danger{% endif %}">
+                                {{ history.change }}
+                            </span>
+                        </td>
+                        <td>{{ history.new_stock }}</td>
+                        <td>{{ history.reason }}</td>
+                        <td>{{ history.user.username|default:"System" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-3">No stock history available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Restock Modal -->
+<div class="modal fade" id="bulkRestockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bulk Restock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulk-restock-form">
+                    <div class="mb-3">
+                        <label class="form-label">Quantity to Add</label>
+                        <input type="number" class="form-control" name="quantity" min="1" value="10" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Reason</label>
+                        <select class="form-select" name="reason">
+                            <option value="manual_restock">Manual Restock</option>
+                            <option value="purchase_order">Purchase Order</option>
+                            <option value="returned_goods">Returned Goods</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-bulk-restock">Apply Restock</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.product-image-small {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.stock-input, .threshold-input {
+    text-align: center;
+}
+
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Stock input change
+    $('.stock-input').on('change', function() {
+        const inventoryId = $(this).data('inventory-id');
+        const newStock = $(this).val();
+        const input = $(this);
+        
+        input.prop('disabled', true);
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/update-stock/',
+            type: 'POST',
+            data: {
+                'inventory_id': inventoryId,
+                'stock_quantity': newStock,
+                'reason': 'manual_update',
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Stock updated successfully!', 'success');
+                    updateRowStatus(input.closest('tr'), newStock, response.threshold);
+                }
+            },
+            complete: function() {
+                input.prop('disabled', false);
+            }
+        });
+    });
+
+    // Threshold input change
+    $('.threshold-input').on('change', function() {
+        const inventoryId = $(this).data('inventory-id');
+        const newThreshold = $(this).val();
+        const input = $(this);
+        
+        input.prop('disabled', true);
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/update-threshold/',
+            type: 'POST',
+            data: {
+                'inventory_id': inventoryId,
+                'threshold': newThreshold,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Threshold updated successfully!', 'success');
+                    updateRowStatus(input.closest('tr'), response.stock, newThreshold);
+                }
+            },
+            complete: function() {
+                input.prop('disabled', false);
+            }
+        });
+    });
+
+    function updateRowStatus(row, stock, threshold) {
+        const statusCell = row.find('td').eq(6);
+        const badge = statusCell.find('.badge');
+        
+        badge.remove();
+        
+        if (stock == 0) {
+            statusCell.html('<span class="badge bg-danger">Out of Stock</span>');
+            row.removeClass('table-warning').addClass('table-danger');
+        } else if (stock <= threshold) {
+            statusCell.html('<span class="badge bg-warning">Low Stock</span>');
+            row.removeClass('table-danger').addClass('table-warning');
+        } else {
+            statusCell.html('<span class="badge bg-success">In Stock</span>');
+            row.removeClass('table-danger table-warning');
+        }
+    }
+
+    // Quick restock
+    $('.quick-restock').on('click', function() {
+        const inventoryId = $(this).data('inventory-id');
+        const productName = $(this).data('product-name');
+        
+        Swal.fire({
+            title: `Restock ${productName}`,
+            input: 'number',
+            inputLabel: 'Enter quantity to add',
+            inputPlaceholder: 'Enter quantity...',
+            inputValue: 10,
+            showCancelButton: true,
+            confirmButtonText: 'Restock',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+                if (!value || value <= 0) {
+                    return 'Please enter a valid quantity';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const stockInput = $(`input[data-inventory-id="${inventoryId}"]`);
+                const newStock = parseInt(stockInput.val()) + parseInt(result.value);
+                
+                stockInput.val(newStock).trigger('change');
+            }
+        });
+    });
+
+    // Show low stock only
+    $('#show-low-stock-only').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('.inventory-row[data-stock-status="in_stock"]').hide();
+        } else {
+            $('.inventory-row').show();
+        }
+    });
+
+    // Bulk selection
+    $('#select-all-inventory').on('change', function() {
+        $('.select-inventory').prop('checked', this.checked);
+        updateBulkActions();
+    });
+
+    $('.select-inventory').on('change', function() {
+        updateBulkActions();
+    });
+
+    function updateBulkActions() {
+        const selectedCount = $('.select-inventory:checked').length;
+        $('#selected-inventory-count').text(selectedCount);
+        
+        if (selectedCount > 0) {
+            $('#inventory-bulk-actions').removeClass('d-none');
+        } else {
+            $('#inventory-bulk-actions').addClass('d-none');
+        }
+    }
+
+    // Bulk restock
+    $('#bulk-restock').on('click', function() {
+        $('#bulkRestockModal').modal('show');
+    });
+
+    $('#confirm-bulk-restock').on('click', function() {
+        const selectedItems = getSelectedInventoryItems();
+        const formData = $('#bulk-restock-form').serializeArray();
+        
+        if (selectedItems.length > 0) {
+            $.ajax({
+                url: '/admin-dashboard/ajax/bulk-restock/',
+                type: 'POST',
+                data: {
+                    'inventory_ids': selectedItems,
+                    'form_data': formData,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#bulkRestockModal').modal('hide');
+                        showNotification(`Restocked ${selectedItems.length} items!`, 'success');
+                        location.reload();
+                    }
+                }
+            });
+        }
+    });
+
+    function getSelectedInventoryItems() {
+        return $('.select-inventory:checked').map(function() {
+            return this.value;
+        }).get();
+    }
+
+    // Export inventory
+    $('#export-inventory').on('click', function() {
+        const params = new URLSearchParams(window.location.search);
+        params.set('export', 'csv');
+        window.location.href = window.location.pathname + '?' + params.toString();
+    });
+
+    // View product
+    $('.view-product').on('click', function() {
+        const productId = $(this).data('product-id');
+        window.open(`/shop/product/${productId}/`, '_blank');
+    });
+});
+</script>
+{% endblock %}

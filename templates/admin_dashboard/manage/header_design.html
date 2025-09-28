@@ -1,0 +1,596 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Header Design - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Header Design Manager</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-success" id="save-header-design">
+            <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Header Templates -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Header Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="header-templates">
+                    {% for header in header_templates %}
+                    <div class="header-template-card {% if header.id == active_header.id %}active{% endif %}" 
+                         data-header-id="{{ header.id }}">
+                        <div class="template-preview">
+                            <div class="template-header {{ header.class_name }}">
+                                <div class="header-content">
+                                    {% if header.layout == 'logo_left' %}
+                                    <div class="logo">Logo</div>
+                                    <div class="menu">Menu Items</div>
+                                    <div class="icons">Icons</div>
+                                    {% elif header.layout == 'logo_center' %}
+                                    <div class="menu">Menu</div>
+                                    <div class="logo">Logo</div>
+                                    <div class="icons">Icons</div>
+                                    {% elif header.layout == 'minimal' %}
+                                    <div class="logo">Logo</div>
+                                    <div class="menu-icons">
+                                        <span>Menu</span>
+                                        <span>Icons</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <h6>{{ header.name }}</h6>
+                            <p class="text-muted mb-2">{{ header.description }}</p>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-outline-primary preview-header" 
+                                        data-header-id="{{ header.id }}">
+                                    <i class="fas fa-eye me-1"></i> Preview
+                                </button>
+                                <button class="btn btn-sm btn-outline-success select-header {% if header.id == active_header.id %}d-none{% endif %}" 
+                                        data-header-id="{{ header.id }}">
+                                    <i class="fas fa-check me-1"></i> Select
+                                </button>
+                                <span class="badge bg-success selected-badge {% if header.id != active_header.id %}d-none{% endif %}">
+                                    <i class="fas fa-check me-1"></i> Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Custom Header Builder -->
+                <div class="custom-header-builder mt-4">
+                    <h6>Custom Header Builder</h6>
+                    <button class="btn btn-outline-primary w-100" id="create-custom-header">
+                        <i class="fas fa-plus me-1"></i> Create Custom Header
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Header Settings -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Header Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="header-settings-form">
+                    <div class="mb-3">
+                        <label class="form-label">Sticky Header</label>
+                        <div class="form-check form-switch">
+                            <input type="checkbox" class="form-check-input" name="sticky_header" 
+                                   id="sticky-header" {% if header_settings.sticky_header %}checked{% endif %}>
+                            <label class="form-check-label" for="sticky-header">Enable sticky header on scroll</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Header Background</label>
+                        <input type="color" class="form-control" name="header_bg" 
+                               value="{{ header_settings.background_color|default:'#ffffff' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Text Color</label>
+                        <input type="color" class="form-control" name="text_color" 
+                               value="{{ header_settings.text_color|default:'#333333' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Header Height</label>
+                        <input type="range" class="form-range" name="header_height" min="60" max="120" 
+                               value="{{ header_settings.height|default:80 }}">
+                        <div class="form-text text-end" id="height-value">80px</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Logo Size</label>
+                        <input type="range" class="form-range" name="logo_size" min="30" max="80" 
+                               value="{{ header_settings.logo_size|default:40 }}">
+                        <div class="form-text text-end" id="logo-size-value">40px</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Preview -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Live Preview</h5>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" id="preview-desktop">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="preview-tablet">
+                        <i class="fas fa-tablet-alt"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary active" id="preview-mobile">
+                        <i class="fas fa-mobile-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="preview-container" id="preview-container">
+                    <div class="device-frame mobile">
+                        <div class="device-screen">
+                            <!-- Active Header Preview -->
+                            <header class="website-header {{ active_header.class_name }}" 
+                                    id="header-preview">
+                                <div class="container">
+                                    <div class="header-content">
+                                        {% if active_header.layout == 'logo_left' %}
+                                        <div class="logo">
+                                            <img src="{% static 'images/logo.png' %}" alt="Logo" 
+                                                 style="height: {{ header_settings.logo_size|default:40 }}px;">
+                                        </div>
+                                        <nav class="menu">
+                                            <a href="#">Home</a>
+                                            <a href="#">Shop</a>
+                                            <a href="#">Categories</a>
+                                            <a href="#">Contact</a>
+                                        </nav>
+                                        <div class="header-icons">
+                                            <a href="#"><i class="fas fa-search"></i></a>
+                                            <a href="#"><i class="fas fa-user"></i></a>
+                                            <a href="#"><i class="fas fa-shopping-cart"></i></a>
+                                        </div>
+                                        {% elif active_header.layout == 'logo_center' %}
+                                        <nav class="menu left-menu">
+                                            <a href="#">Home</a>
+                                            <a href="#">Shop</a>
+                                        </nav>
+                                        <div class="logo">
+                                            <img src="{% static 'images/logo.png' %}" alt="Logo"
+                                                 style="height: {{ header_settings.logo_size|default:40 }}px;">
+                                        </div>
+                                        <div class="header-content-right">
+                                            <nav class="menu right-menu">
+                                                <a href="#">Categories</a>
+                                                <a href="#">Contact</a>
+                                            </nav>
+                                            <div class="header-icons">
+                                                <a href="#"><i class="fas fa-search"></i></a>
+                                                <a href="#"><i class="fas fa-user"></i></a>
+                                                <a href="#"><i class="fas fa-shopping-cart"></i></a>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </header>
+                            
+                            <!-- Sample Content -->
+                            <div class="preview-content">
+                                <div class="content-placeholder"></div>
+                                <div class="content-placeholder"></div>
+                                <div class="content-placeholder"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Customization Options -->
+                <div class="customization-options mt-4">
+                    <h6>Customize Active Header</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Menu Items</label>
+                            <div id="menu-items-container">
+                                {% for item in menu_items %}
+                                <div class="menu-item d-flex align-items-center mb-2">
+                                    <input type="text" class="form-control form-control-sm me-2" 
+                                           value="{{ item.title }}" placeholder="Menu text">
+                                    <input type="text" class="form-control form-control-sm me-2" 
+                                           value="{{ item.url }}" placeholder="URL">
+                                    <button class="btn btn-sm btn-outline-danger remove-menu-item">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary mt-2" id="add-menu-item">
+                                <i class="fas fa-plus me-1"></i> Add Menu Item
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Header Elements</label>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="show_search" 
+                                       id="show-search" checked>
+                                <label class="form-check-label" for="show-search">Show Search Icon</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="show_user" 
+                                       id="show-user" checked>
+                                <label class="form-check-label" for="show-user">Show User Account</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="show_cart" 
+                                       id="show-cart" checked>
+                                <label class="form-check-label" for="show-cart">Show Shopping Cart</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" name="show_language" 
+                                       id="show-language">
+                                <label class="form-check-label" for="show-language">Show Language Switcher</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CSS Customization -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Custom CSS</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Custom Header CSS</label>
+                    <textarea class="form-control" id="custom-header-css" rows="8" 
+                              placeholder="Add custom CSS for header styling...">{{ custom_css }}</textarea>
+                </div>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Use this area to add custom CSS styles that will be applied to the header.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Custom Header Modal -->
+<div class="modal fade" id="createHeaderModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create Custom Header</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-header-form">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Header Name</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Layout Type</label>
+                                <select class="form-select" name="layout" required>
+                                    <option value="logo_left">Logo Left, Menu Middle, Icons Right</option>
+                                    <option value="logo_center">Menu Left, Logo Center, Icons Right</option>
+                                    <option value="minimal">Minimal with Side Menu</option>
+                                    <option value="centered">Centered Logo with Bottom Menu</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-custom-header">Create Header</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.header-template-card {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.header-template-card:hover {
+    border-color: #007bff;
+}
+
+.header-template-card.active {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.template-preview {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.template-header {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-weight: bold;
+    color: #007bff;
+}
+
+.menu a {
+    margin: 0 5px;
+    text-decoration: none;
+    color: #333;
+}
+
+.header-icons a {
+    margin-left: 10px;
+    color: #666;
+}
+
+.preview-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.device-frame {
+    max-width: 400px;
+    margin: 0 auto;
+    border: 2px solid #333;
+    border-radius: 20px;
+    background: white;
+    overflow: hidden;
+}
+
+.device-screen {
+    background: white;
+    min-height: 600px;
+}
+
+.website-header {
+    background: white;
+    padding: 15px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.preview-content .content-placeholder {
+    height: 200px;
+    background: #e9ecef;
+    margin: 10px;
+    border-radius: 4px;
+}
+
+.menu-item {
+    background: #f8f9fa;
+    padding: 8px;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Header template selection
+    $('.select-header').on('click', function() {
+        const headerId = $(this).data('header-id');
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/set-active-header/',
+            type: 'POST',
+            data: {
+                'header_id': headerId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Header template activated!', 'success');
+                    
+                    // Update UI
+                    $('.header-template-card').removeClass('active');
+                    $('.select-header').removeClass('d-none');
+                    $('.selected-badge').addClass('d-none');
+                    
+                    $(`.header-template-card[data-header-id="${headerId}"]`).addClass('active');
+                    $(`.select-header[data-header-id="${headerId}"]`).addClass('d-none');
+                    $(`.selected-badge[data-header-id="${headerId}"]`).removeClass('d-none');
+                    
+                    // Update preview
+                    updateHeaderPreview(response.header_data);
+                }
+            }
+        });
+    });
+
+    // Preview header
+    $('.preview-header').on('click', function() {
+        const headerId = $(this).data('header-id');
+        // Load and preview header template
+        previewHeaderTemplate(headerId);
+    });
+
+    // Create custom header
+    $('#create-custom-header').on('click', function() {
+        $('#createHeaderModal').modal('show');
+    });
+
+    $('#save-custom-header').on('click', function() {
+        const formData = $('#create-header-form').serialize();
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/create-custom-header/',
+            type: 'POST',
+            data: formData + '&csrfmiddlewaretoken={{ csrf_token }}',
+            success: function(response) {
+                if (response.success) {
+                    $('#createHeaderModal').modal('hide');
+                    showNotification('Custom header created!', 'success');
+                    location.reload();
+                }
+            }
+        });
+    });
+
+    // Settings form changes
+    $('#header-settings-form input').on('change', function() {
+        updateHeaderPreviewFromSettings();
+    });
+
+    // Range inputs
+    $('input[type="range"]').on('input', function() {
+        const value = $(this).val();
+        const target = $(this).attr('name') + '-value';
+        $('#' + target).text(value + ($(this).attr('name').includes('size') ? 'px' : 'px'));
+        updateHeaderPreviewFromSettings();
+    });
+
+    // Add menu item
+    $('#add-menu-item').on('click', function() {
+        const newItem = $(`
+            <div class="menu-item d-flex align-items-center mb-2">
+                <input type="text" class="form-control form-control-sm me-2" 
+                       placeholder="Menu text">
+                <input type="text" class="form-control form-control-sm me-2" 
+                       placeholder="URL" value="#">
+                <button class="btn btn-sm btn-outline-danger remove-menu-item">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `);
+        $('#menu-items-container').append(newItem);
+    });
+
+    // Remove menu item
+    $(document).on('click', '.remove-menu-item', function() {
+        $(this).closest('.menu-item').remove();
+    });
+
+    // Save header design
+    $('#save-header-design').on('click', function() {
+        const settings = $('#header-settings-form').serializeArray();
+        const menuItems = [];
+        const customCSS = $('#custom-header-css').val();
+        
+        $('#menu-items-container .menu-item').each(function() {
+            const title = $(this).find('input').eq(0).val();
+            const url = $(this).find('input').eq(1).val();
+            if (title && url) {
+                menuItems.push({ title: title, url: url });
+            }
+        });
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/save-header-design/',
+            type: 'POST',
+            data: {
+                'settings': settings,
+                'menu_items': JSON.stringify(menuItems),
+                'custom_css': customCSS,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Header design saved successfully!', 'success');
+                }
+            }
+        });
+    });
+
+    // Preview device type
+    $('.btn-group .btn').on('click', function() {
+        $('.btn-group .btn').removeClass('active');
+        $(this).addClass('active');
+        
+        const device = $(this).attr('id').replace('preview-', '');
+        $('.device-frame').removeClass('desktop tablet mobile').addClass(device);
+    });
+
+    function updateHeaderPreviewFromSettings() {
+        const formData = $('#header-settings-form').serializeArray();
+        const settings = {};
+        
+        formData.forEach(item => {
+            settings[item.name] = item.value;
+        });
+        
+        // Apply settings to preview
+        $('#header-preview').css({
+            'background-color': settings.header_bg,
+            'color': settings.text_color,
+            'height': settings.header_height + 'px'
+        });
+        
+        $('#header-preview .logo img').css({
+            'height': settings.logo_size + 'px'
+        });
+        
+        if (settings.sticky_header === 'on') {
+            $('#header-preview').addClass('sticky');
+        } else {
+            $('#header-preview').removeClass('sticky');
+        }
+    }
+
+    function updateHeaderPreview(headerData) {
+        // Update preview with new header data
+        console.log('Updating preview with:', headerData);
+    }
+
+    function previewHeaderTemplate(headerId) {
+        // Load and preview specific header template
+        $.ajax({
+            url: `/admin-dashboard/ajax/get-header-template/${headerId}/`,
+            type: 'GET',
+            success: function(response) {
+                updateHeaderPreview(response);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

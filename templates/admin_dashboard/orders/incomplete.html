@@ -1,0 +1,253 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Incomplete Orders - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Incomplete Orders</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-warning" id="send-reminders">
+                <i class="fas fa-bell me-1"></i> Send Reminders
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Abandoned Carts</h6>
+                        <h3 class="mb-0">{{ orders|length }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Potential Revenue</h6>
+                        <h3 class="mb-0">৳{{ potential_revenue }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-dollar-sign fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Recovery Rate</h6>
+                        <h3 class="mb-0">15%</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Recovered Today</h6>
+                        <h3 class="mb-0">3</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-redo fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Incomplete Orders & Abandoned Carts</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="incomplete-orders-table">
+                <thead>
+                    <tr>
+                        <th>Customer</th>
+                        <th>Contact</th>
+                        <th>Items in Cart</th>
+                        <th>Cart Value</th>
+                        <th>Last Activity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="customer-avatar me-3 bg-warning">
+                                    {{ order.full_name|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ order.full_name }}</div>
+                                    <small class="text-muted">ID: {{ order.id }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ order.email }}</div>
+                            <small class="text-muted">{{ order.phone }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">{{ order.items.count }} items</span>
+                        </td>
+                        <td>
+                            <strong>৳{{ order.total_amount }}</strong>
+                        </td>
+                        <td>
+                            <div>{{ order.created_at|timesince }} ago</div>
+                            <small class="text-muted">{{ order.created_at|date:"M d, Y" }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning">Abandoned</span>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary send-reminder" 
+                                        data-order-id="{{ order.id }}">
+                                    <i class="fas fa-bell me-1"></i> Remind
+                                </button>
+                                <button class="btn btn-sm btn-outline-success recover-cart"
+                                        data-order-id="{{ order.id }}">
+                                    <i class="fas fa-redo me-1"></i> Recover
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-cart"
+                                        data-order-id="{{ order.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4">
+                            <div class="empty-state">
+                                <i class="fas fa-cart-arrow-down fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No Incomplete Orders</h5>
+                                <p class="text-muted">Great! All orders are being completed successfully.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Send reminder
+    $('.send-reminder').on('click', function() {
+        const orderId = $(this).data('order-id');
+        const button = $(this);
+        
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Sending...');
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/send-cart-reminder/',
+            type: 'POST',
+            data: {
+                'order_id': orderId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Reminder sent successfully!', 'success');
+                    button.html('<i class="fas fa-check me-1"></i>Sent');
+                } else {
+                    showNotification('Failed to send reminder', 'error');
+                    button.prop('disabled', false).html('<i class="fas fa-bell me-1"></i>Remind');
+                }
+            }
+        });
+    });
+
+    // Recover cart
+    $('.recover-cart').on('click', function() {
+        const orderId = $(this).data('order-id');
+        
+        Swal.fire({
+            title: 'Recover Cart?',
+            text: 'This will send a special recovery email to the customer.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, recover!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/admin-dashboard/ajax/recover-cart/',
+                    type: 'POST',
+                    data: {
+                        'order_id': orderId,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('Cart recovery initiated!', 'success');
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Bulk reminders
+    $('#send-reminders').on('click', function() {
+        Swal.fire({
+            title: 'Send Bulk Reminders?',
+            text: 'This will send reminder emails to all customers with abandoned carts.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Send to All',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/admin-dashboard/ajax/send-bulk-reminders/',
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification(`Reminders sent to ${response.count} customers!`, 'success');
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

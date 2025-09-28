@@ -1,0 +1,337 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Banner Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Banner & Slider Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:add_banner' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Banner
+        </a>
+    </div>
+</div>
+
+<!-- Active Banners -->
+<div class="row mb-4">
+    {% for banner in active_banners %}
+    <div class="col-lg-6 mb-4">
+        <div class="card banner-card">
+            <div class="banner-image">
+                <img src="{{ banner.image.url }}" class="card-img-top" alt="{{ banner.title }}">
+                <div class="banner-overlay">
+                    <span class="badge bg-{% if banner.is_active %}success{% else %}secondary{% endif %}">
+                        {{ banner.is_active|yesno:"Active,Inactive" }}
+                    </span>
+                    <span class="badge bg-info">{{ banner.get_position_display }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">{{ banner.title }}</h5>
+                <p class="card-text">
+                    <small class="text-muted">
+                        {{ banner.start_date|date:"M d, Y" }} - {{ banner.end_date|date:"M d, Y" }}
+                    </small>
+                </p>
+                {% if banner.link %}
+                <p class="card-text">
+                    <small>Link: <a href="{{ banner.link }}" target="_blank">{{ banner.link }}</a></small>
+                </p>
+                {% endif %}
+                <div class="btn-group w-100">
+                    <button class="btn btn-sm btn-outline-primary edit-banner" 
+                            data-banner-id="{{ banner.id }}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-{% if banner.is_active %}warning{% else %}success{% endif %} toggle-banner"
+                            data-banner-id="{{ banner.id }}"
+                            data-current-status="{{ banner.is_active }}">
+                        {% if banner.is_active %}
+                        <i class="fas fa-pause"></i> Pause
+                        {% else %}
+                        <i class="fas fa-play"></i> Activate
+                        {% endif %}
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-banner"
+                            data-banner-id="{{ banner.id }}"
+                            data-banner-title="{{ banner.title }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-images fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No Active Banners</h5>
+                <p class="text-muted">Create your first banner to showcase promotions and featured content.</p>
+                <a href="{% url 'admin_dashboard:add_banner' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Create Banner
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Banner Statistics -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Banner Performance</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="banner-performance-table">
+                        <thead>
+                            <tr>
+                                <th>Banner</th>
+                                <th>Position</th>
+                                <th>Impressions</th>
+                                <th>Clicks</th>
+                                <th>CTR</th>
+                                <th>Status</th>
+                                <th>Period</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for banner in all_banners %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ banner.image.url }}" alt="{{ banner.title }}" 
+                                             class="banner-thumb me-3">
+                                        <div>
+                                            <div class="fw-bold">{{ banner.title }}</div>
+                                            {% if banner.link %}
+                                            <small class="text-muted">{{ banner.link|truncatechars:30 }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ banner.get_position_display }}</td>
+                                <td>{{ banner.impressions|default:0 }}</td>
+                                <td>{{ banner.clicks|default:0 }}</td>
+                                <td>
+                                    {% widthratio banner.clicks|default:0 banner.impressions|default:1 100 as ctr %}
+                                    <span class="badge bg-{% if ctr > 5 %}success{% elif ctr > 2 %}warning{% else %}danger{% endif %}">
+                                        {{ ctr }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if banner.is_active %}success{% else %}secondary{% endif %}">
+                                        {{ banner.is_active|yesno:"Active,Inactive" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small>{{ banner.start_date|date:"M d" }} - {{ banner.end_date|date:"M d" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Banner Schedule -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Banner Schedule</h5>
+    </div>
+    <div class="card-body">
+        <div id="banner-schedule-calendar"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.banner-card {
+    border: none;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.banner-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.banner-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.banner-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.banner-card:hover .banner-image img {
+    transform: scale(1.05);
+}
+
+.banner-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.banner-thumb {
+    width: 60px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+#banner-schedule-calendar {
+    height: 400px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Toggle banner status
+    $('.toggle-banner').on('click', function() {
+        const bannerId = $(this).data('banner-id');
+        const currentStatus = $(this).data('current-status');
+        const newStatus = !currentStatus;
+        const button = $(this);
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/toggle-banner-status/',
+            type: 'POST',
+            data: {
+                'banner_id': bannerId,
+                'is_active': newStatus,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    button.data('current-status', newStatus);
+                    
+                    if (newStatus) {
+                        button.removeClass('btn-outline-success').addClass('btn-outline-warning');
+                        button.html('<i class="fas fa-pause"></i> Pause');
+                        button.closest('.banner-card').find('.badge.bg-secondary')
+                              .removeClass('bg-secondary').addClass('bg-success').text('Active');
+                    } else {
+                        button.removeClass('btn-outline-warning').addClass('btn-outline-success');
+                        button.html('<i class="fas fa-play"></i> Activate');
+                        button.closest('.banner-card').find('.badge.bg-success')
+                              .removeClass('bg-success').addClass('bg-secondary').text('Inactive');
+                    }
+                    
+                    showNotification('Banner status updated!', 'success');
+                }
+            }
+        });
+    });
+
+    // Delete banner
+    $('.delete-banner').on('click', function() {
+        const bannerId = $(this).data('banner-id');
+        const bannerTitle = $(this).data('banner-title');
+        
+        Swal.fire({
+            title: 'Delete Banner?',
+            html: `Are you sure you want to delete <strong>${bannerTitle}</strong>?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/admin-dashboard/ajax/delete-banner/${bannerId}/`,
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('Banner deleted successfully!', 'success');
+                            $(`button[data-banner-id="${bannerId}"]`).closest('.col').fadeOut();
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Initialize banner performance table
+    $('#banner-performance-table').DataTable({
+        pageLength: 10,
+        ordering: true
+    });
+
+    // Initialize calendar
+    const calendarEl = document.getElementById('banner-schedule-calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: [
+            {% for banner in all_banners %}
+            {
+                title: '{{ banner.title }}',
+                start: '{{ banner.start_date|date:"Y-m-d" }}',
+                end: '{{ banner.end_date|date:"Y-m-d" }}',
+                color: '{% if banner.is_active %}#28a745{% else %}#6c757d{% endif %}',
+                textColor: 'white'
+            },
+            {% endfor %}
+        ],
+        eventClick: function(info) {
+            const bannerId = info.event.id;
+            // Show banner details
+            showBannerDetails(bannerId);
+        }
+    });
+    calendar.render();
+
+    function showBannerDetails(bannerId) {
+        // Load and show banner details
+        $.ajax({
+            url: `/admin-dashboard/ajax/get-banner/${bannerId}/`,
+            type: 'GET',
+            success: function(banner) {
+                Swal.fire({
+                    title: banner.title,
+                    html: `
+                        <img src="${banner.image}" alt="${banner.title}" style="max-width: 100%; margin-bottom: 15px;">
+                        <p><strong>Position:</strong> ${banner.position_display}</p>
+                        <p><strong>Period:</strong> ${banner.start_date} to ${banner.end_date}</p>
+                        <p><strong>Status:</strong> ${banner.is_active ? 'Active' : 'Inactive'}</p>
+                        ${banner.link ? `<p><strong>Link:</strong> <a href="${banner.link}" target="_blank">${banner.link}</a></p>` : ''}
+                    `,
+                    showCloseButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: 'Edit Banner',
+                    cancelButtonText: 'Close'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Redirect to edit page
+                        window.location.href = `/admin-dashboard/manage/banners/edit/${bannerId}/`;
+                    }
+                });
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

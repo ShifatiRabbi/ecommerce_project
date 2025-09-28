@@ -432,3 +432,510 @@ body.dark-mode .form-control {
 .pulse {
     animation: pulse 0.5s ease-in-out;
 }
+
+// ===== NEW ENHANCEMENTS =====
+
+// Advanced Order Management
+function initOrderManagement() {
+    // Real-time order updates
+    const orderSocket = new WebSocket('ws://localhost:8000/ws/orders/');
+    
+    orderSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        if (data.type === 'new_order') {
+            showNotification(`New order received: #${data.order_number}`, 'success');
+            updateOrderStats();
+        } else if (data.type === 'status_update') {
+            updateOrderStatus(data.order_id, data.new_status);
+        }
+    };
+    
+    orderSocket.onclose = function(e) {
+        console.log('Order WebSocket disconnected');
+        setTimeout(initOrderManagement, 5000); // Reconnect after 5 seconds
+    };
+}
+
+// Advanced Search with Filters
+function initAdvancedSearch() {
+    const searchInput = $('#global-search');
+    const searchResults = $('#search-results');
+    
+    let searchTimeout;
+    
+    searchInput.on('input', function() {
+        clearTimeout(searchTimeout);
+        const query = $(this).val();
+        
+        if (query.length > 2) {
+            searchTimeout = setTimeout(() => {
+                performGlobalSearch(query);
+            }, 500);
+        } else {
+            searchResults.hide();
+        }
+    });
+    
+    function performGlobalSearch(query) {
+        $.ajax({
+            url: '/admin-dashboard/ajax/global-search/',
+            type: 'GET',
+            data: { q: query },
+            success: function(response) {
+                displaySearchResults(response);
+            }
+        });
+    }
+    
+    function displaySearchResults(results) {
+        let html = '';
+        
+        if (results.products.length > 0) {
+            html += '<div class="search-category"><strong>Products</strong></div>';
+            results.products.forEach(product => {
+                html += `
+                    <a href="/admin-dashboard/products/edit/${product.id}/" class="search-item">
+                        <i class="fas fa-cube me-2"></i>
+                        ${product.name}
+                        <span class="text-muted">${product.sku}</span>
+                    </a>
+                `;
+            });
+        }
+        
+        if (results.orders.length > 0) {
+            html += '<div class="search-category"><strong>Orders</strong></div>';
+            results.orders.forEach(order => {
+                html += `
+                    <a href="/admin-dashboard/orders/${order.id}/" class="search-item">
+                        <i class="fas fa-shopping-cart me-2"></i>
+                        Order #${order.order_number}
+                        <span class="text-muted">${order.customer_name}</span>
+                    </a>
+                `;
+            });
+        }
+        
+        if (results.customers.length > 0) {
+            html += '<div class="search-category"><strong>Customers</strong></div>';
+            results.customers.forEach(customer => {
+                html += `
+                    <a href="/admin-dashboard/customers/${customer.id}/" class="search-item">
+                        <i class="fas fa-user me-2"></i>
+                        ${customer.name}
+                        <span class="text-muted">${customer.email}</span>
+                    </a>
+                `;
+            });
+        }
+        
+        if (html === '') {
+            html = '<div class="search-item text-muted">No results found</div>';
+        }
+        
+        searchResults.html(html).show();
+    }
+}
+
+// Bulk Image Processing
+function initBulkImageProcessor() {
+    const dropzone = $('#bulk-image-upload');
+    const progressBar = $('#upload-progress');
+    const fileList = $('#file-list');
+    
+    dropzone.on('dragover', function(e) {
+        e.preventDefault();
+        $(this).addClass('dragover');
+    });
+    
+    dropzone.on('dragleave', function() {
+        $(this).removeClass('dragover');
+    });
+    
+    dropzone.on('drop', function(e) {
+        e.preventDefault();
+        $(this).removeClass('dragover');
+        const files = e.originalEvent.dataTransfer.files;
+        processFiles(files);
+    });
+    
+    $('#image-files').on('change', function(e) {
+        processFiles(e.target.files);
+    });
+    
+    function processFiles(files) {
+        const formData = new FormData();
+        
+        for (let file of files) {
+            if (file.type.startsWith('image/')) {
+                formData.append('images', file);
+                addFileToList(file);
+            }
+        }
+        
+        if (formData.has('images')) {
+            uploadFiles(formData);
+        }
+    }
+    
+    function addFileToList(file) {
+        const fileItem = $(`
+            <div class="file-item" data-filename="${file.name}">
+                <div class="file-info">
+                    <i class="fas fa-image me-2"></i>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">(${formatFileSize(file.size)})</span>
+                </div>
+                <div class="file-status">
+                    <span class="status-text">Pending</span>
+                    <div class="progress" style="height: 4px; width: 100px;">
+                        <div class="progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        `);
+        
+        fileList.append(fileItem);
+    }
+    
+    function uploadFiles(formData) {
+        $.ajax({
+            url: '/admin-dashboard/ajax/bulk-image-upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progressBar.css('width', percentComplete + '%');
+                    }
+                }, false);
+                
+                return xhr;
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(`${response.uploaded_count} images uploaded successfully!`, 'success');
+                    updateFileStatuses(response.results);
+                }
+            }
+        });
+    }
+    
+    function updateFileStatuses(results) {
+        results.forEach(result => {
+            const fileItem = $(`.file-item[data-filename="${result.filename}"]`);
+            const statusText = fileItem.find('.status-text');
+            const progressBar = fileItem.find('.progress-bar');
+            
+            if (result.success) {
+                statusText.text('Uploaded').addClass('text-success');
+                progressBar.css('width', '100%').addClass('bg-success');
+            } else {
+                statusText.text('Failed').addClass('text-danger');
+                progressBar.css('width', '100%').addClass('bg-danger');
+            }
+        });
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+}
+
+// Advanced Data Export
+function initDataExporter() {
+    $('#export-data').on('click', function() {
+        const modal = $('#exportModal');
+        modal.modal('show');
+    });
+    
+    $('#export-form').on('submit', function(e) {
+        e.preventDefault();
+        const formData = $(this).serialize();
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/export-data/',
+            type: 'POST',
+            data: formData,
+            xhr: function() {
+                const xhr = new XMLHttpRequest();
+                xhr.responseType = 'blob';
+                return xhr;
+            },
+            success: function(data, status, xhr) {
+                const blob = new Blob([data]);
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Get filename from response headers
+                const contentDisposition = xhr.getResponseHeader('Content-Disposition');
+                let filename = 'export.csv';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch.length === 2) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                showNotification('Export completed successfully!', 'success');
+                $('#exportModal').modal('hide');
+            }
+        });
+    });
+}
+
+// Real-time Dashboard Updates
+function initRealTimeDashboard() {
+    // Update stats every 30 seconds
+    setInterval(updateDashboardStats, 30000);
+    
+    // Initialize charts with real-time data
+    initRealTimeCharts();
+}
+
+function initRealTimeCharts() {
+    const salesChart = Chart.getChart('salesChart');
+    const ordersChart = Chart.getChart('ordersChart');
+    
+    setInterval(() => {
+        $.ajax({
+            url: '/admin-dashboard/ajax/real-time-stats/',
+            type: 'GET',
+            success: function(data) {
+                // Update sales chart
+                if (salesChart) {
+                    salesChart.data.datasets[0].data = data.sales_data;
+                    salesChart.update('none');
+                }
+                
+                // Update orders chart
+                if (ordersChart) {
+                    ordersChart.data.datasets[0].data = data.orders_data;
+                    ordersChart.update('none');
+                }
+            }
+        });
+    }, 60000); // Update every minute
+}
+
+// Advanced Form Validation
+function initAdvancedValidation() {
+    $.validator.addMethod("phoneBD", function(value, element) {
+        return this.optional(element) || /^(?:\+88|01)?\d{11}$/.test(value);
+    }, "Please enter a valid Bangladeshi phone number");
+    
+    $.validator.addMethod("slug", function(value, element) {
+        return this.optional(element) || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+    }, "Please enter a valid slug (lowercase letters, numbers, and hyphens)");
+    
+    // Initialize validation on all forms
+    $('form').each(function() {
+        $(this).validate({
+            errorClass: "is-invalid",
+            validClass: "is-valid",
+            errorElement: "div",
+            errorPlacement: function(error, element) {
+                error.addClass("invalid-feedback");
+                element.after(error);
+            },
+            highlight: function(element, errorClass, validClass) {
+                $(element).addClass(errorClass).removeClass(validClass);
+            },
+            unhighlight: function(element, errorClass, validClass) {
+                $(element).removeClass(errorClass).addClass(validClass);
+            }
+        });
+    });
+}
+
+// Performance Monitoring
+function initPerformanceMonitor() {
+    let lastLoadTime = Date.now();
+    
+    $(document).ajaxStart(function() {
+        lastLoadTime = Date.now();
+        $('body').addClass('loading');
+    });
+    
+    $(document).ajaxStop(function() {
+        const loadTime = Date.now() - lastLoadTime;
+        $('body').removeClass('loading');
+        
+        // Log slow requests
+        if (loadTime > 5000) {
+            console.warn(`Slow request detected: ${loadTime}ms`);
+        }
+    });
+    
+    // Monitor page load performance
+    window.addEventListener('load', function() {
+        const loadTime = Date.now() - performance.timing.navigationStart;
+        console.log(`Page loaded in ${loadTime}ms`);
+    });
+}
+
+// Initialize all enhanced features when document is ready
+$(document).ready(function() {
+    initOrderManagement();
+    initAdvancedSearch();
+    initBulkImageProcessor();
+    initDataExporter();
+    initRealTimeDashboard();
+    initAdvancedValidation();
+    initPerformanceMonitor();
+    
+    // Additional initialization
+    initTooltips();
+    initKeyboardShortcuts();
+    initAutoSave();
+});
+
+// Enhanced Tooltip System
+function initTooltips() {
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            trigger: 'hover focus',
+            delay: { show: 500, hide: 100 }
+        });
+    });
+}
+
+// Enhanced Keyboard Shortcuts
+function initKeyboardShortcuts() {
+    const shortcuts = {
+        'ctrl+shift+p': function() {
+            // Quick product add
+            window.location.href = '/admin-dashboard/products/add/';
+        },
+        'ctrl+shift+o': function() {
+            // Quick order view
+            window.location.href = '/admin-dashboard/orders/';
+        },
+        'ctrl+shift+s': function() {
+            // Quick search focus
+            $('#global-search').focus();
+        },
+        'ctrl+shift+d': function() {
+            // Toggle dark mode
+            $('body').toggleClass('dark-mode');
+            localStorage.setItem('theme', $('body').hasClass('dark-mode') ? 'dark' : 'light');
+        }
+    };
+    
+    $(document).on('keydown', function(e) {
+        let key = '';
+        
+        if (e.ctrlKey) key += 'ctrl+';
+        if (e.shiftKey) key += 'shift+';
+        
+        key += e.key.toLowerCase();
+        
+        if (shortcuts[key]) {
+            e.preventDefault();
+            shortcuts[key]();
+        }
+    });
+}
+
+// Enhanced Auto-save
+function initAutoSave() {
+    let autoSaveTimeout;
+    let isDirty = false;
+    
+    $('.auto-save').on('input change', function() {
+        isDirty = true;
+        clearTimeout(autoSaveTimeout);
+        
+        autoSaveTimeout = setTimeout(() => {
+            if (isDirty) {
+                saveFormData();
+            }
+        }, 2000);
+    });
+    
+    function saveFormData() {
+        const form = $('.auto-save').closest('form');
+        const formData = new FormData(form[0]);
+        
+        $.ajax({
+            url: form.attr('action') + '?autosave=true',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Changes saved automatically', 'success', 2000);
+                    isDirty = false;
+                }
+            }
+        });
+    }
+    
+    // Warn before leaving if there are unsaved changes
+    $(window).on('beforeunload', function() {
+        if (isDirty) {
+            return 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+}
+
+// Utility Functions
+function formatCurrency(amount, currency = 'BDT') {
+    const formatter = new Intl.NumberFormat('en-BD', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 2
+    });
+    return formatter.format(amount);
+}
+
+function formatDate(dateString, format = 'medium') {
+    const date = new Date(dateString);
+    const options = {
+        short: { year: 'numeric', month: 'short', day: 'numeric' },
+        medium: { year: 'numeric', month: 'long', day: 'numeric' },
+        long: { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }
+    };
+    
+    return date.toLocaleDateString('en-BD', options[format] || options.medium);
+}
+
+function debounce(func, wait, immediate) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            timeout = null;
+            if (!immediate) func(...args);
+        };
+        const callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func(...args);
+    };
+}
+
+// Export utility functions for global use
+window.adminUtils = {
+    formatCurrency,
+    formatDate,
+    debounce,
+    showNotification: window.showNotification
+};

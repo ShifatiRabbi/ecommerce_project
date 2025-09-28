@@ -1,0 +1,544 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Product Reporting - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.metric-card {
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid;
+}
+
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.metric-change.positive {
+    color: #28a745;
+}
+
+.metric-change.negative {
+    color: #dc3545;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.product-image-small {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.export-btn-group .btn {
+    margin: 2px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Product Analytics & Reporting</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button class="btn btn-sm btn-outline-primary" id="refresh-reports">
+                <i class="fas fa-sync-alt me-1"></i> Refresh
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-success dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-file-export me-1"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-format="csv">CSV Format</a></li>
+                <li><a class="dropdown-item" href="#" data-format="excel">Excel Format</a></li>
+                <li><a class="dropdown-item" href="#" data-format="pdf">PDF Report</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Date Range Filter -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Report Period</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" id="report-filter-form" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Start Date</label>
+                <input type="date" class="form-control" name="start_date" 
+                       value="{{ start_date|date:'Y-m-d' }}" id="start-date">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">End Date</label>
+                <input type="date" class="form-control" name="end_date" 
+                       value="{{ end_date|date:'Y-m-d' }}" id="end-date">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select class="form-select" name="category" id="category-filter">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter me-1"></i> Apply Filters
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card border-left-primary">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h6 class="card-title text-uppercase text-muted mb-0">Total Sales</h6>
+                        <span class="metric-value text-primary">৳{{ total_sales }}</span>
+                        <p class="mt-2 mb-0">
+                            <span class="metric-change positive">
+                                <i class="fas fa-arrow-up"></i> 12.4%
+                            </span>
+                            <span class="text-muted">from last period</span>
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-primary text-white rounded-circle">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card border-left-success">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h6 class="card-title text-uppercase text-muted mb-0">Units Sold</h6>
+                        <span class="metric-value text-success">{{ total_units_sold }}</span>
+                        <p class="mt-2 mb-0">
+                            <span class="metric-change positive">
+                                <i class="fas fa-arrow-up"></i> 8.2%
+                            </span>
+                            <span class="text-muted">from last period</span>
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-success text-white rounded-circle">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card border-left-info">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h6 class="card-title text-uppercase text-muted mb-0">Avg. Order Value</h6>
+                        <span class="metric-value text-info">৳{{ avg_order_value }}</span>
+                        <p class="mt-2 mb-0">
+                            <span class="metric-change positive">
+                                <i class="fas fa-arrow-up"></i> 5.7%
+                            </span>
+                            <span class="text-muted">from last period</span>
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-info text-white rounded-circle">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card metric-card border-left-warning">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col">
+                        <h6 class="card-title text-uppercase text-muted mb-0">Conversion Rate</h6>
+                        <span class="metric-value text-warning">{{ conversion_rate }}%</span>
+                        <p class="mt-2 mb-0">
+                            <span class="metric-change negative">
+                                <i class="fas fa-arrow-down"></i> 2.1%
+                            </span>
+                            <span class="text-muted">from last period</span>
+                        </p>
+                    </div>
+                    <div class="col-auto">
+                        <div class="icon icon-shape bg-warning text-white rounded-circle">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Sales Trend</h5>
+                <select class="form-select form-select-sm" style="width: auto;" id="trend-period">
+                    <option value="daily">Daily</option>
+                    <option value="weekly" selected>Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="salesTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Sales by Category</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Performing Products -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Top Selling Products</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Units Sold</th>
+                                <th>Revenue</th>
+                                <th>Growth</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in top_products %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if product.images.first %}
+                                        <img src="{{ product.images.first.image.url }}" 
+                                             class="product-image-small me-3"
+                                             onerror="this.src='{% static 'images/placeholder-product.png' %}'">
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold">{{ product.product__name }}</div>
+                                            <small class="text-muted">{{ product.product__sku }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ product.total_sold }}</span>
+                                </td>
+                                <td>
+                                    <strong>৳{{ product.total_revenue }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if product.growth > 0 %}success{% else %}danger{% endif %}">
+                                        {{ product.growth }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Low Stock Alert</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Product</th>
+                                <th>Current Stock</th>
+                                <th>Threshold</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in low_stock %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if item.product.images.first %}
+                                        <img src="{{ item.product.images.first.image.url }}" 
+                                             class="product-image-small me-3"
+                                             onerror="this.src='{% static 'images/placeholder-product.png' %}'">
+                                        {% endif %}
+                                        <div class="fw-bold">{{ item.product.name }}</div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-danger">{{ item.stock_quantity }}</span>
+                                </td>
+                                <td>{{ item.low_stock_threshold }}</td>
+                                <td>
+                                    <span class="badge bg-danger">Critical</span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary restock-product"
+                                            data-product-id="{{ item.product.id }}">
+                                        Restock
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">
+                                    No low stock products
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Reports -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Detailed Product Performance</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="detailed-report-table">
+                <thead>
+                    <tr>
+                        <th>Product Name</th>
+                        <th>SKU</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Units Sold</th>
+                        <th>Revenue</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in product_performance %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td><code>{{ product.sku }}</code></td>
+                        <td>{{ product.category.name }}</td>
+                        <td>৳{{ product.price }}</td>
+                        <td>{{ product.units_sold|default:0 }}</td>
+                        <td>৳{{ product.revenue|default:0 }}</td>
+                        <td>
+                            <span class="{% if product.inventory.stock_quantity <= product.inventory.low_stock_threshold %}text-danger fw-bold{% endif %}">
+                                {{ product.inventory.stock_quantity }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge {% if product.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ product.is_active|yesno:"Active,Inactive" }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sales Trend Chart
+    const salesCtx = document.getElementById('salesTrendChart').getContext('2d');
+    const salesChart = new Chart(salesCtx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+            datasets: [{
+                label: 'Sales (৳)',
+                data: [12000, 19000, 15000, 25000, 22000],
+                borderColor: '#007bff',
+                backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '৳' + value.toLocaleString();
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryChart = new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Electronics', 'Clothing', 'Home & Garden', 'Books', 'Sports'],
+            datasets: [{
+                data: [35, 25, 20, 15, 5],
+                backgroundColor: [
+                    '#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Refresh reports
+    $('#refresh-reports').on('click', function() {
+        const btn = $(this);
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...');
+        
+        // Simulate API call
+        setTimeout(() => {
+            btn.prop('disabled', false).html('<i class="fas fa-sync-alt me-1"></i> Refresh');
+            showNotification('Reports updated successfully!', 'success');
+        }, 1500);
+    });
+
+    // Export functionality
+    $('.dropdown-item[data-format]').on('click', function(e) {
+        e.preventDefault();
+        const format = $(this).data('format');
+        exportReport(format);
+    });
+
+    function exportReport(format) {
+        const form = $('#report-filter-form');
+        const url = form.attr('action') || window.location.href;
+        const params = new URLSearchParams(window.location.search);
+        params.set('export', format);
+        
+        window.location.href = url + '?' + params.toString();
+    }
+
+    // Restock product
+    $('.restock-product').on('click', function() {
+        const productId = $(this).data('product-id');
+        const button = $(this);
+        
+        Swal.fire({
+            title: 'Restock Product',
+            input: 'number',
+            inputLabel: 'Enter quantity to add',
+            inputPlaceholder: 'Enter quantity...',
+            showCancelButton: true,
+            confirmButtonText: 'Restock',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+                if (!value || value <= 0) {
+                    return 'Please enter a valid quantity';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: '/admin-dashboard/ajax/restock-product/',
+                    type: 'POST',
+                    data: {
+                        'product_id': productId,
+                        'quantity': result.value,
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showNotification('Product restocked successfully!', 'success');
+                            button.closest('tr').fadeOut();
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Trend period change
+    $('#trend-period').on('change', function() {
+        updateCharts($(this).val());
+    });
+
+    function updateCharts(period) {
+        // Update charts based on selected period
+        console.log('Updating charts for period:', period);
+    }
+
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+        if (!$('#refresh-reports').prop('disabled')) {
+            $('#refresh-reports').click();
+        }
+    }, 300000);
+});
+</script>
+{% endblock %}

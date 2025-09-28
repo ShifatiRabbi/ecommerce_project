@@ -1,0 +1,416 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Custom CSS - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Custom CSS Manager</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-success" id="save-custom-css">
+            <i class="fas fa-save me-1"></i> Save CSS
+        </button>
+        <button class="btn btn-sm btn-outline-primary ms-2" id="preview-css">
+            <i class="fas fa-eye me-1"></i> Preview
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">CSS Editor</h5>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary" id="format-css">
+                        <i class="fas fa-indent me-1"></i> Format
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="minify-css">
+                        <i class="fas fa-compress me-1"></i> Minify
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="clear-css">
+                        <i class="fas fa-trash me-1"></i> Clear
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <textarea class="form-control" id="custom-css-editor" rows="20" 
+                              placeholder="Enter your custom CSS here...">{{ custom_css }}</textarea>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> Custom CSS will be applied to the entire website. 
+                    Make sure your CSS is valid to avoid breaking the site layout.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- CSS Templates -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">CSS Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="css-templates">
+                    <div class="css-template-item mb-3">
+                        <h6>Dark Mode Override</h6>
+                        <pre class="css-snippet">body.dark-mode {
+    background: #1a1a1a;
+    color: #ffffff;
+}</pre>
+                        <button class="btn btn-sm btn-outline-primary insert-template" 
+                                data-template="dark-mode">Insert</button>
+                    </div>
+                    
+                    <div class="css-template-item mb-3">
+                        <h6>Custom Button Styles</h6>
+                        <pre class="css-snippet">.btn-custom {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 25px;
+}</pre>
+                        <button class="btn btn-sm btn-outline-primary insert-template" 
+                                data-template="custom-buttons">Insert</button>
+                    </div>
+                    
+                    <div class="css-template-item mb-3">
+                        <h6>Product Card Enhancement</h6>
+                        <pre class="css-snippet">.product-card {
+    transition: transform 0.3s ease;
+}
+.product-card:hover {
+    transform: translateY(-5px);
+}</pre>
+                        <button class="btn btn-sm btn-outline-primary insert-template" 
+                                data-template="product-card">Insert</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CSS Validation -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">CSS Validator</h5>
+            </div>
+            <div class="card-body">
+                <button class="btn btn-outline-info w-100 mb-3" id="validate-css">
+                    <i class="fas fa-check-circle me-1"></i> Validate CSS
+                </button>
+                <div id="validation-result" class="d-none">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check me-2"></i>
+                        <span id="validation-message">CSS is valid!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CSS Statistics -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">CSS Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="css-stats">
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Lines of Code:</span>
+                        <strong id="lines-count">0</strong>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Selectors:</span>
+                        <strong id="selectors-count">0</strong>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between mb-2">
+                        <span>Properties:</span>
+                        <strong id="properties-count">0</strong>
+                    </div>
+                    <div class="stat-item d-flex justify-content-between">
+                        <span>File Size:</span>
+                        <strong id="file-size">0 KB</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">CSS Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <iframe src="{% url 'admin_dashboard:css_preview' %}" 
+                        id="preview-frame" style="width: 100%; height: 500px; border: none;"></iframe>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.css-snippet {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+    padding: 10px;
+    font-size: 12px;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 10px;
+}
+
+.css-template-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+#custom-css-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.stat-item {
+    font-size: 0.9rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const editor = document.getElementById('custom-css-editor');
+    
+    // Update statistics
+    function updateStatistics() {
+        const css = editor.value;
+        const lines = css.split('\n').length;
+        const selectors = (css.match(/{/g) || []).length;
+        const properties = (css.match(/:/g) || []).length;
+        const size = new Blob([css]).size / 1024;
+        
+        $('#lines-count').text(lines);
+        $('#selectors-count').text(selectors);
+        $('#properties-count').text(properties);
+        $('#file-size').text(size.toFixed(2) + ' KB');
+    }
+    
+    // Initial statistics
+    updateStatistics();
+    
+    // Real-time statistics update
+    editor.addEventListener('input', updateStatistics);
+    
+    // Save custom CSS
+    $('#save-custom-css').on('click', function() {
+        const css = editor.value;
+        
+        $.ajax({
+            url: '/admin-dashboard/ajax/save-custom-css/',
+            type: 'POST',
+            data: {
+                'custom_css': css,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Custom CSS saved successfully!', 'success');
+                }
+            }
+        });
+    });
+    
+    // Preview CSS
+    $('#preview-css').on('click', function() {
+        const css = editor.value;
+        
+        // Store CSS in session for preview
+        sessionStorage.setItem('preview_css', css);
+        $('#previewModal').modal('show');
+        
+        // Refresh iframe after a short delay
+        setTimeout(() => {
+            $('#preview-frame')[0].contentWindow.location.reload();
+        }, 500);
+    });
+    
+    // Format CSS
+    $('#format-css').on('click', function() {
+        const css = editor.value;
+        // Simple CSS formatting
+        const formatted = css
+            .replace(/{/g, ' {\n    ')
+            .replace(/;/g, ';\n    ')
+            .replace(/}/g, '\n}\n')
+            .replace(/\s+/g, ' ')
+            .trim();
+        
+        editor.value = formatted;
+        updateStatistics();
+    });
+    
+    // Minify CSS
+    $('#minify-css').on('click', function() {
+        const css = editor.value;
+        // Simple CSS minification
+        const minified = css
+            .replace(/\/\*[\s\S]*?\*\//g, '') // Remove comments
+            .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+            .replace(/\s*{\s*/g, '{') // Remove spaces around {
+            .replace(/\s*}\s*/g, '}') // Remove spaces around }
+            .replace(/\s*:\s*/g, ':') // Remove spaces around :
+            .replace(/\s*;\s*/g, ';') // Remove spaces around ;
+            .replace(/;}/g, '}') // Remove ; before }
+            .trim();
+        
+        editor.value = minified;
+        updateStatistics();
+    });
+    
+    // Clear CSS
+    $('#clear-css').on('click', function() {
+        Swal.fire({
+            title: 'Clear CSS?',
+            text: 'This will remove all custom CSS. This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, clear it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                editor.value = '';
+                updateStatistics();
+                showNotification('CSS cleared!', 'success');
+            }
+        });
+    });
+    
+    // Insert template
+    $('.insert-template').on('click', function() {
+        const template = $(this).data('template');
+        let snippet = '';
+        
+        switch(template) {
+            case 'dark-mode':
+                snippet = `/* Dark Mode Override */
+body.dark-mode {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+body.dark-mode .card {
+    background: #2d2d2d;
+    border-color: #404040;
+}`;
+                break;
+            case 'custom-buttons':
+                snippet = `/* Custom Button Styles */
+.btn-custom {
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    border: none;
+    border-radius: 25px;
+    color: white;
+    padding: 10px 25px;
+    transition: all 0.3s ease;
+}
+
+.btn-custom:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}`;
+                break;
+            case 'product-card':
+                snippet = `/* Product Card Enhancement */
+.product-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}`;
+                break;
+        }
+        
+        // Insert at cursor position or append
+        const start = editor.selectionStart;
+        const end = editor.selectionEnd;
+        const text = editor.value;
+        const before = text.substring(0, start);
+        const after = text.substring(end, text.length);
+        
+        editor.value = before + snippet + after;
+        editor.selectionStart = editor.selectionEnd = start + snippet.length;
+        editor.focus();
+        
+        updateStatistics();
+    });
+    
+    // Validate CSS
+    $('#validate-css').on('click', function() {
+        const css = editor.value;
+        
+        // Simple CSS validation (basic check)
+        const errors = [];
+        
+        // Check for unbalanced braces
+        const openBraces = (css.match(/{/g) || []).length;
+        const closeBraces = (css.match(/}/g) || []).length;
+        
+        if (openBraces !== closeBraces) {
+            errors.push(`Unbalanced braces: ${openBraces} opening vs ${closeBraces} closing`);
+        }
+        
+        // Check for missing semicolons (basic check)
+        const lines = css.split('\n');
+        lines.forEach((line, index) => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.endsWith('{') && !trimmed.endsWith('}') && 
+                !trimmed.includes('{') && !trimmed.endsWith(';')) {
+                errors.push(`Missing semicolon on line ${index + 1}: ${trimmed}`);
+            }
+        });
+        
+        const result = $('#validation-result');
+        const message = $('#validation-message');
+        
+        if (errors.length === 0) {
+            result.removeClass('d-none').find('.alert').removeClass('alert-danger').addClass('alert-success');
+            message.html('<i class="fas fa-check me-2"></i>CSS is valid!');
+        } else {
+            result.removeClass('d-none').find('.alert').removeClass('alert-success').addClass('alert-danger');
+            message.html(`<i class="fas fa-exclamation-triangle me-2"></i>Found ${errors.length} error(s):<br>${errors.join('<br>')}`);
+        }
+    });
+    
+    // Auto-save every 30 seconds
+    let autoSaveTimeout;
+    editor.addEventListener('input', function() {
+        clearTimeout(autoSaveTimeout);
+        autoSaveTimeout = setTimeout(() => {
+            $('#save-custom-css').click();
+        }, 30000);
+    });
+    
+    // Keyboard shortcuts
+    editor.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            $('#save-custom-css').click();
+        }
+    });
+});
+</script>
+{% endblock %}
