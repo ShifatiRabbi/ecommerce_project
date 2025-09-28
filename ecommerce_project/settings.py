@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'core',
     'shop',
     'cart',
+    'admin_dashboard',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +75,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'cart.context_processors.cart',
                 'core.context_processors.site_settings',
+                'admin_dashboard.context_processors.admin_settings',
             ],
         },
     },
@@ -150,3 +152,7 @@ REST_FRAMEWORK = {
 
 # Session settings
 CART_SESSION_ID = 'cart'
+
+# Admin site header
+ADMIN_SITE_HEADER = "Ecommerce Admin Dashboard"
+LOGIN_URL = '/admin/login/'
