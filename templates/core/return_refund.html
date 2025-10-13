@@ -1,1 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Return & Refund Policy - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.policy-hero {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    color: white;
+    padding: 80px 0;
+}
+
+.policy-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    padding: 40px;
+}
+
+.section-title {
+    border-bottom: 2px solid #dc3545;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.process-step {
+    position: relative;
+    padding-left: 80px;
+    margin-bottom: 30px;
+}
+
+.step-number {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    top: 5px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #dc3545;
+    border: 3px solid white;
+    box-shadow: 0 0 0 3px #e9ecef;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Policy Hero -->
+<section class="policy-hero">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold mb-4">Return & Refund Policy</h1>
+                <p class="lead mb-0">We want you to be completely satisfied with your purchase</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Policy Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="policy-content">
+                    <!-- Introduction -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Our Return & Refund Policy</h2>
+                        <p>At {{ site_settings.site_name }}, we strive to ensure your complete satisfaction with every purchase. This policy outlines the terms and conditions for returns and refunds.</p>
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <strong>30-Day Return Policy:</strong> Most items can be returned within 30 days of delivery for a full refund or exchange.
+                        </div>
+                    </section>
+
+                    <!-- Return Process -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Return Process</h2>
+                        
+                        <div class="process-step">
+                            <div class="step-number">1</div>
+                            <h5>Initiate Return</h5>
+                            <p>Contact our customer service team within 30 days of receiving your order to initiate the return process. You can reach us at {{ site_settings.contact_email }} or {{ site_settings.contact_phone }}.</p>
+                        </div>
+                        
+                        <div class="process-step">
+                            <div class="step-number">2</div>
+                            <h5>Package Item</h5>
+                            <p>Pack the item in its original packaging with all tags and accessories included. Include the original invoice and reason for return.</p>
+                        </div>
+                        
+                        <div class="process-step">
+                            <div class="step-number">3</div>
+                            <h5>Ship Item</h5>
+                            <p>We'll provide you with a return shipping label or instructions on where to ship the item. For cash on delivery orders, you may need to visit our nearest drop-off point.</p>
+                        </div>
+                        
+                        <div class="process-step">
+                            <div class="step-number">4</div>
+                            <h5>Receive Refund</h5>
+                            <p>Once we receive and inspect the returned item, we'll process your refund within 7-10 business days. You'll receive confirmation via email.</p>
+                        </div>
+                    </section>
+
+                    <!-- Refund Timeline -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Refund Timeline</h2>
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Day 1-2</h6>
+                                    <p class="text-muted mb-0">We receive and inspect your returned item</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Day 3-5</h6>
+                                    <p class="text-muted mb-0">Refund is processed and approved</p>
+                                </div>
+                            </div>
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <h6>Day 6-10</h6>
+                                    <p class="text-muted mb-0">Refund appears in your account (depending on payment method)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Eligible Items -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Eligible for Return</h2>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card border-success mb-3">
+                                    <div class="card-header bg-success text-white">
+                                        <i class="fas fa-check-circle me-2"></i> Eligible Items
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Unused products</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Original packaging</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> All tags attached</li>
+                                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i> Within 30 days</li>
+                                            <li><i class="fas fa-check text-success me-2"></i> Defective products</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card border-danger mb-3">
+                                    <div class="card-header bg-danger text-white">
+                                        <i class="fas fa-times-circle me-2"></i> Non-Returnable Items
+                                    </div>
+                                    <div class="card-body">
+                                        <ul class="list-unstyled mb-0">
+                                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i> Personalized items</li>
+                                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i> Perishable goods</li>
+                                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i> Intimate products</li>
+                                            <li class="mb-2"><i class="fas fa-times text-danger me-2"></i> Digital products</li>
+                                            <li><i class="fas fa-times text-danger me-2"></i> Used or damaged items</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Refund Methods -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Refund Methods</h2>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Payment Method</th>
+                                        <th>Refund Method</th>
+                                        <th>Processing Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Credit/Debit Card</td>
+                                        <td>Original payment method</td>
+                                        <td>7-10 business days</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Mobile Banking</td>
+                                        <td>Bank transfer</td>
+                                        <td>3-5 business days</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Cash on Delivery</td>
+                                        <td>Bank transfer or bKash</td>
+                                        <td>5-7 business days</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Exchange Policy -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Exchange Policy</h2>
+                        <p>We offer exchanges for items in different sizes or colors, subject to availability. The exchange process follows the same timeline as returns.</p>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> If the item you want to exchange is out of stock, we'll issue a refund instead.
+                        </div>
+                    </section>
+
+                    <!-- Defective Products -->
+                    <section class="mb-5">
+                        <h2 class="section-title">Defective or Damaged Products</h2>
+                        <p>If you receive a defective or damaged product, please contact us within 48 hours of delivery. We'll arrange for a replacement or refund at no additional cost to you.</p>
+                        <p>Please provide photos of the damaged item and packaging to help us process your claim faster.</p>
+                    </section>
+
+                    <!-- Contact Information -->
+                    <section>
+                        <h2 class="section-title">Need Help?</h2>
+                        <p>If you have any questions about our return and refund policy, please don't hesitate to contact us:</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-phone me-2 text-primary"></i>Call Us</h5>
+                                        <p class="mb-0">{{ site_settings.contact_phone }}</p>
+                                        <small class="text-muted">Mon-Fri: 9AM-6PM, Sat: 10AM-4PM</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5><i class="fas fa-envelope me-2 text-primary"></i>Email Us</h5>
+                                        <p class="mb-0">{{ site_settings.contact_email }}</p>
+                                        <small class="text-muted">We respond within 24 hours</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

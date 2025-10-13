@@ -1,1 +1,479 @@
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Home - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 100px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('{% static "images/hero-pattern.png" %}') repeat;
+    opacity: 0.1;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+}
+
+.category-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.category-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.product-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.feature-icon i {
+    font-size: 2rem;
+    color: white;
+}
+
+.newsletter-section {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.testimonial-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    padding: 30px;
+    margin: 15px;
+}
+
+.testimonial-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.stats-number {
+    font-size: 3rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <h1 class="display-4 fw-bold mb-4 animate__animated animate__fadeInUp">
+                        Welcome to {{ site_settings.site_name }}
+                    </h1>
+                    <p class="lead mb-4 animate__animated animate__fadeInUp animate__delay-1s">
+                        Discover amazing products at unbeatable prices. Quality you can trust, service you deserve.
+                    </p>
+                    <div class="hero-buttons animate__animated animate__fadeInUp animate__delay-2s">
+                        <a href="{% url 'shop:shop' %}" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-shopping-bag me-2"></i> Shop Now
+                        </a>
+                        <a href="#featured" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-star me-2"></i> Featured Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image text-center animate__animated animate__fadeInRight">
+                    <img src="{% static 'images/hero-image.png' %}" alt="Shopping" class="img-fluid" style="max-height: 500px;">
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold">Why Choose Us</h2>
+                <p class="text-muted">We provide the best shopping experience</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                    <h5>Free Shipping</h5>
+                    <p class="text-muted">Free shipping on orders over ৳2000</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h5>Secure Payment</h5>
+                    <p class="text-muted">100% secure payment processing</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-undo"></i>
+                    </div>
+                    <h5>Easy Returns</h5>
+                    <p class="text-muted">30-day return policy</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-4">
+                <div class="text-center">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h5>24/7 Support</h5>
+                    <p class="text-muted">Round the clock customer support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Categories Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold">Shop by Category</h2>
+                <p class="text-muted">Explore our wide range of categories</p>
+            </div>
+        </div>
+        <div class="row">
+            {% for category in categories|slice:":8" %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="category-card text-center h-100">
+                    <a href="{{ category.get_absolute_url }}" class="text-decoration-none">
+                        <div class="card-body p-4">
+                            {% if category.image %}
+                            <img src="{{ category.image.url }}" alt="{{ category.name }}" class="img-fluid mb-3" style="height: 120px; object-fit: cover;">
+                            {% else %}
+                            <div class="bg-light rounded mb-3 d-flex align-items-center justify-content-center" style="height: 120px;">
+                                <i class="fas fa-folder fa-3x text-muted"></i>
+                            </div>
+                            {% endif %}
+                            <h5 class="text-dark">{{ category.name }}</h5>
+                            <p class="text-muted mb-0">{{ category.product_set.count }} products</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'shop:shop' %}" class="btn btn-primary btn-lg">
+                View All Categories <i class="fas fa-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products -->
+<section id="featured" class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold">Featured Products</h2>
+                <p class="text-muted">Check out our most popular products</p>
+            </div>
+        </div>
+        <div class="row">
+            {% for product in featured_products %}
+            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                <div class="product-card h-100">
+                    <div class="card-body p-3">
+                        <div class="product-image position-relative mb-3">
+                            {% if product.images.first %}
+                            <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" class="img-fluid" style="height: 200px; object-fit: cover; width: 100%;">
+                            {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-image fa-2x text-muted"></i>
+                            </div>
+                            {% endif %}
+                            {% if product.get_discount_percentage %}
+                            <span class="position-absolute top-0 start-0 badge bg-danger m-2">
+                                {{ product.get_discount_percentage }}% OFF
+                            </span>
+                            {% endif %}
+                        </div>
+                        <h6 class="product-title mb-2">{{ product.name }}</h6>
+                        <div class="product-price mb-3">
+                            <span class="h5 text-primary">৳{{ product.price }}</span>
+                            {% if product.compare_price %}
+                            <span class="text-muted text-decoration-line-through ms-2">৳{{ product.compare_price }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="product-actions">
+                            <button class="btn btn-primary btn-sm w-100 add-to-cart" data-product-id="{{ product.id }}">
+                                <i class="fas fa-shopping-cart me-2"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <div class="py-5">
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No Featured Products</h5>
+                    <p class="text-muted">Check back later for featured products</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-item">
+                    <div class="stats-number">{{ total_products }}+</div>
+                    <p class="text-muted">Products</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-item">
+                    <div class="stats-number">{{ total_customers }}+</div>
+                    <p class="text-muted">Happy Customers</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-item">
+                    <div class="stats-number">{{ total_orders }}+</div>
+                    <p class="text-muted">Orders Delivered</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="stats-item">
+                    <div class="stats-number">24/7</div>
+                    <p class="text-muted">Customer Support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="fw-bold">What Our Customers Say</h2>
+                <p class="text-muted">Don't just take our word for it</p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{% static 'images/avatar1.jpg' %}" alt="Customer" class="testimonial-avatar me-3">
+                        <div>
+                            <h6 class="mb-0">John Doe</h6>
+                            <div class="text-warning">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted">"Amazing quality products and fast delivery. Will definitely shop again!"</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{% static 'images/avatar2.jpg' %}" alt="Customer" class="testimonial-avatar me-3">
+                        <div>
+                            <h6 class="mb-0">Jane Smith</h6>
+                            <div class="text-warning">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star-half-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted">"Great customer service and easy returns policy. Highly recommended!"</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="testimonial-card">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="{% static 'images/avatar3.jpg' %}" alt="Customer" class="testimonial-avatar me-3">
+                        <div>
+                            <h6 class="mb-0">Mike Johnson</h6>
+                            <div class="text-warning">
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                                <i class="fas fa-star"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted">"Best prices and quality products. My go-to online store for everything!"</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Newsletter -->
+<section class="newsletter-section py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 mb-4 mb-lg-0">
+                <h3 class="fw-bold mb-3">Stay Updated</h3>
+                <p class="mb-0">Subscribe to our newsletter and never miss out on new products and exclusive offers.</p>
+            </div>
+            <div class="col-lg-6">
+                <form class="newsletter-form">
+                    <div class="input-group input-group-lg">
+                        <input type="email" class="form-control" placeholder="Enter your email address" required>
+                        <button class="btn btn-dark" type="submit">
+                            Subscribe <i class="fas fa-paper-plane ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Add to cart functionality
+    $('.add-to-cart').on('click', function() {
+        const productId = $(this).data('product-id');
+        const button = $(this);
+        
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Adding...');
+        
+        $.ajax({
+            url: '{% url "cart:cart_add" %}',
+            type: 'POST',
+            data: {
+                'product_id': productId,
+                'quantity': 1,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    button.html('<i class="fas fa-check me-2"></i> Added!');
+                    $('.cart-count').text(response.cart_total_items);
+                    
+                    // Show success message
+                    showNotification(response.message, 'success');
+                    
+                    setTimeout(() => {
+                        button.prop('disabled', false).html('<i class="fas fa-shopping-cart me-2"></i> Add to Cart');
+                    }, 2000);
+                }
+            },
+            error: function() {
+                button.prop('disabled', false).html('<i class="fas fa-shopping-cart me-2"></i> Add to Cart');
+                showNotification('Error adding product to cart', 'error');
+            }
+        });
+    });
+
+    // Smooth scrolling for anchor links
+    $('a[href^="#"]').on('click', function(e) {
+        e.preventDefault();
+        $('html, body').animate({
+            scrollTop: $($(this).attr('href')).offset().top - 80
+        }, 500);
+    });
+
+    // Newsletter form submission
+    $('.newsletter-form').on('submit', function(e) {
+        e.preventDefault();
+        const email = $(this).find('input[type="email"]').val();
+        
+        // Simulate newsletter subscription
+        showNotification('Thank you for subscribing to our newsletter!', 'success');
+        $(this).find('input[type="email"]').val('');
+    });
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 9999;" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('body').append(notification);
+    
+    setTimeout(() => {
+        notification.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}

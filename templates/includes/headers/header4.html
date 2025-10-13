@@ -1,1 +1,160 @@
+{% load static i18n %}
+<header class="main-header header-4">
+    <!-- Top Bar -->
+    <div class="top-bar bg-light border-bottom py-2">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="top-bar-left">
+                        <small class="text-muted">
+                            <i class="fas fa-phone me-1"></i> {{ site_settings.contact_phone }} | 
+                            <i class="fas fa-envelope me-1"></i> {{ site_settings.contact_email }}
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="top-bar-right">
+                        <div class="dropdown d-inline-block me-3">
+                            <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-globe me-1"></i> {{ request.LANGUAGE_CODE|upper }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item change-language" href="#" data-lang="en">English</a></li>
+                                <li><a class="dropdown-item change-language" href="#" data-lang="bn">বাংলা</a></li>
+                            </ul>
+                        </div>
+                        
+                        {% if user.is_authenticated %}
+                        <small class="text-muted me-3">Welcome, {{ user.get_short_name|default:user.username }}</small>
+                        <a href="{% url 'admin_dashboard:admin_logout' %}" class="btn btn-sm btn-outline-dark">Logout</a>
+                        {% else %}
+                        <a href="#" class="btn btn-sm btn-outline-dark me-2">Login</a>
+                        <a href="#" class="btn btn-sm btn-dark">Register</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Main Header -->
+    <div class="main-navbar bg-white py-3">
+        <div class="container">
+            <div class="row align-items-center">
+                <!-- Logo -->
+                <div class="col-lg-3">
+                    <a class="navbar-brand" href="{% url 'core:home' %}">
+                        {% if site_settings.site_logo %}
+                        <img src="{{ site_settings.site_logo.url }}" alt="{{ site_settings.site_name }}" height="40">
+                        {% else %}
+                        <span class="h3 fw-bold text-primary">{{ site_settings.site_name }}</span>
+                        {% endif %}
+                    </a>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="col-lg-6">
+                    <form action="{% url 'shop:shop' %}" method="get" class="search-form">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control" placeholder="{% trans 'Search for products...' %}">
+                            <select class="form-select" style="max-width: 150px;">
+                                <option>All Categories</option>
+                                {% for category in categories %}
+                                <option>{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Header Actions -->
+                <div class="col-lg-3">
+                    <div class="header-actions d-flex justify-content-end align-items-center">
+                        <!-- Wishlist -->
+                        <a href="#" class="btn btn-link position-relative me-3">
+                            <i class="fas fa-heart fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                3
+                            </span>
+                        </a>
+                        
+                        <!-- Cart -->
+                        <a href="{% url 'cart:cart_detail' %}" class="btn btn-link position-relative me-3">
+                            <i class="fas fa-shopping-cart fa-lg"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary cart-count">
+                                {{ cart|length }}
+                            </span>
+                        </a>
+                        
+                        <!-- User Menu -->
+                        {% if user.is_authenticated %}
+                        <div class="dropdown">
+                            <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle fa-lg"></i>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'admin_dashboard:dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> My Account</a></li>
+                                <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-bag me-2"></i> Orders</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_dashboard:admin_logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <a href="#" class="btn btn-link"><i class="fas fa-user-circle fa-lg"></i></a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-primary">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="mainNavigation">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link text-white active" href="{% url 'core:home' %}">{% trans "Home" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{% url 'shop:shop' %}">{% trans "Shop" %}</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link text-white dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            {% trans "Categories" %}
+                        </a>
+                        <ul class="dropdown-menu">
+                            {% for category in categories %}
+                            <li><a class="dropdown-item" href="{{ category.get_absolute_url }}">{{ category.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="{% url 'core:contact' %}">{% trans "Contact" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#">{% trans "Deals" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-white" href="#">{% trans "New Arrivals" %}</a>
+                    </li>
+                </ul>
+                
+                <!-- Special Offers -->
+                <div class="navbar-text">
+                    <small class="text-white">
+                        <i class="fas fa-gift me-1"></i> Special offers available!
+                    </small>
+                </div>
+            </div>
+        </div>
+    </nav>
+</header>

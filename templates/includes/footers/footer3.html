@@ -1,0 +1,122 @@
+{% load static i18n %}
+<footer class="main-footer footer-3 bg-dark text-light">
+    <!-- Footer Main -->
+    <div class="footer-main py-5">
+        <div class="container">
+            <div class="row">
+                <!-- Company Info -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="text-white mb-4">About {{ site_settings.site_name }}</h5>
+                    <p class="text-light mb-4">
+                        {{ site_settings.site_description|default:"We are committed to providing the best shopping experience with quality products and excellent customer service." }}
+                    </p>
+                    <div class="app-download">
+                        <h6 class="text-white mb-3">Download Our App</h6>
+                        <div class="d-flex">
+                            <a href="#" class="me-2">
+                                <img src="{% static 'images/google-play-badge.png' %}" alt="Google Play" height="40">
+                            </a>
+                            <a href="#">
+                                <img src="{% static 'images/app-store-badge.png' %}" alt="App Store" height="40">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shop Links -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="text-white mb-4">{% trans "Shop" %}</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'shop:shop' %}" class="text-light text-decoration-none">{% trans "All Products" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Featured" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "New Arrivals" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Sale" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Best Sellers" %}</a></li>
+                    </ul>
+                </div>
+
+                <!-- Categories -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="text-white mb-4">{% trans "Categories" %}</h5>
+                    <ul class="list-unstyled">
+                        {% for category in categories|slice:":5" %}
+                        <li class="mb-2"><a href="{{ category.get_absolute_url }}" class="text-light text-decoration-none">{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Customer Care -->
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <h5 class="text-white mb-4">{% trans "Customer Care" %}</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="{% url 'core:contact' %}" class="text-light text-decoration-none">{% trans "Contact Us" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Help Center" %}</a></li>
+                        <li class="mb-2"><a href="{% url 'core:return_refund' %}" class="text-light text-decoration-none">{% trans "Returns" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Shipping Info" %}</a></li>
+                        <li class="mb-2"><a href="#" class="text-light text-decoration-none">{% trans "Track Order" %}</a></li>
+                    </ul>
+                </div>
+
+                <!-- Newsletter -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <h5 class="text-white mb-4">{% trans "Stay Connected" %}</h5>
+                    <p class="text-light mb-3">{% trans "Subscribe to our newsletter for the latest updates and offers" %}</p>
+                    
+                    <form class="newsletter-form mb-4">
+                        <div class="input-group">
+                            <input type="email" class="form-control" placeholder="{% trans 'Email address' %}" required>
+                            <button class="btn btn-primary" type="submit">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="store-info">
+                        <div class="info-item d-flex align-items-center mb-2">
+                            <i class="fas fa-phone text-primary me-3"></i>
+                            <div>
+                                <strong class="text-white">{% trans "Call Us" %}</strong>
+                                <p class="mb-0 text-light">{{ site_settings.contact_phone }}</p>
+                            </div>
+                        </div>
+                        <div class="info-item d-flex align-items-center">
+                            <i class="fas fa-envelope text-primary me-3"></i>
+                            <div>
+                                <strong class="text-white">{% trans "Email" %}</strong>
+                                <p class="mb-0 text-light">{{ site_settings.contact_email }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom py-4 bg-black">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <p class="mb-0 text-light">
+                        &copy; {% now "Y" %} {{ site_settings.site_name }}. {% trans "All Rights Reserved." %}
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-md-end">
+                        <div class="footer-links me-4">
+                            <a href="{% url 'core:terms_conditions' %}" class="text-light text-decoration-none me-3">{% trans "Terms" %}</a>
+                            <a href="#" class="text-light text-decoration-none me-3">{% trans "Privacy" %}</a>
+                            <a href="{% url 'core:return_refund' %}" class="text-light text-decoration-none">{% trans "Returns" %}</a>
+                        </div>
+                        <div class="social-links">
+                            <a href="#" class="text-light me-3"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="text-light"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>

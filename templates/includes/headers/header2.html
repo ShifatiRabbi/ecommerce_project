@@ -1,1 +1,148 @@
+{% load static i18n %}
+<header class="main-header header-2">
+    <!-- Top Bar -->
+    <div class="top-bar bg-primary text-white py-2">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="top-bar-left">
+                        <span class="me-3"><i class="fas fa-truck me-1"></i> {% trans "Free shipping on orders over ৳2000" %}</span>
+                        <span><i class="fas fa-shield-alt me-1"></i> {% trans "Secure payment" %}</span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <div class="top-bar-right">
+                        <div class="dropdown d-inline-block me-3">
+                            <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-globe me-1"></i> {{ request.LANGUAGE_CODE|upper }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item change-language" href="#" data-lang="en">English</a></li>
+                                <li><a class="dropdown-item change-language" href="#" data-lang="bn">বাংলা</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <!-- Main Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <!-- Menu Left -->
+            <div class="navbar-nav me-4 d-none d-lg-flex">
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fw-bold" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-bars me-2"></i> {% trans "All Categories" %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                        {% for category in categories %}
+                        <li><a class="dropdown-item" href="{{ category.get_absolute_url }}">{{ category.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Logo Center -->
+            <a class="navbar-brand mx-auto" href="{% url 'core:home' %}">
+                {% if site_settings.site_logo %}
+                <img src="{{ site_settings.site_logo.url }}" alt="{{ site_settings.site_name }}" height="45">
+                {% else %}
+                <span class="h2 fw-bold text-primary">{{ site_settings.site_name }}</span>
+                {% endif %}
+            </a>
+            
+            <!-- Right Icons -->
+            <div class="header-actions d-flex align-items-center">
+                <!-- Search -->
+                <div class="search-container me-3">
+                    <button class="btn btn-link search-toggle" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                
+                <!-- User Account -->
+                {% if user.is_authenticated %}
+                <div class="dropdown me-3">
+                    <button class="btn btn-link dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'admin_dashboard:dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i> Dashboard</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> My Account</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'admin_dashboard:admin_logout' %}"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <a href="#" class="btn btn-link me-3"><i class="fas fa-user"></i></a>
+                {% endif %}
+                
+                <!-- Wishlist -->
+                <a href="#" class="btn btn-link position-relative me-3">
+                    <i class="fas fa-heart"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        3
+                    </span>
+                </a>
+                
+                <!-- Cart -->
+                <a href="{% url 'cart:cart_detail' %}" class="btn btn-link position-relative me-3">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary cart-count">
+                        {{ cart|length }}
+                    </span>
+                </a>
+                
+                <!-- Mobile Menu Toggle -->
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+            
+            <!-- Main Menu -->
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'core:home' %}">{% trans "Home" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'shop:shop' %}">{% trans "Shop" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'core:contact' %}">{% trans "Contact" %}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">{% trans "About" %}</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Search Overlay -->
+    <div class="search-overlay">
+        <div class="container">
+            <div class="search-content">
+                <form action="{% url 'shop:shop' %}" method="get" class="search-form">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control form-control-lg" placeholder="{% trans 'What are you looking for?' %}">
+                        <button class="btn btn-primary btn-lg" type="submit">
+                            <i class="fas fa-search"></i> {% trans "Search" %}
+                        </button>
+                        <button class="btn btn-outline-secondary btn-lg search-close" type="button">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </form>
+                <div class="search-suggestions mt-3">
+                    <strong>{% trans "Popular Searches:" %}</strong>
+                    <a href="#" class="badge bg-light text-dark me-2">Smartphone</a>
+                    <a href="#" class="badge bg-light text-dark me-2">Laptop</a>
+                    <a href="#" class="badge bg-light text-dark me-2">Headphones</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>

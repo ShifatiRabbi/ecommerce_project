@@ -1,1 +1,220 @@
+{% extends 'base.html' %}
+{% load static %}
 
+{% block title %}Terms & Conditions - {{ site_settings.site_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.terms-hero {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    padding: 80px 0;
+}
+
+.terms-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    padding: 40px;
+}
+
+.section-title {
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.terms-nav {
+    position: sticky;
+    top: 100px;
+}
+
+.terms-nav .nav-link {
+    color: #495057;
+    border-left: 3px solid transparent;
+    padding: 8px 15px;
+}
+
+.terms-nav .nav-link.active {
+    color: #007bff;
+    border-left-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.terms-nav .nav-link:hover {
+    color: #007bff;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Terms Hero -->
+<section class="terms-hero">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h1 class="display-4 fw-bold mb-4">Terms & Conditions</h1>
+                <p class="lead mb-0">Please read these terms carefully before using our website</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Terms Content -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Navigation -->
+            <div class="col-lg-3 mb-4">
+                <div class="terms-nav">
+                    <nav class="nav flex-column">
+                        <a class="nav-link active" href="#acceptance">Acceptance of Terms</a>
+                        <a class="nav-link" href="#account">User Accounts</a>
+                        <a class="nav-link" href="#orders">Orders & Payments</a>
+                        <a class="nav-link" href="#shipping">Shipping & Delivery</a>
+                        <a class="nav-link" href="#returns">Returns & Refunds</a>
+                        <a class="nav-link" href="#intellectual">Intellectual Property</a>
+                        <a class="nav-link" href="#liability">Limitation of Liability</a>
+                        <a class="nav-link" href="#changes">Changes to Terms</a>
+                    </nav>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="col-lg-9">
+                <div class="terms-content">
+                    <!-- Acceptance of Terms -->
+                    <section id="acceptance" class="mb-5">
+                        <h2 class="section-title">1. Acceptance of Terms</h2>
+                        <p>By accessing and using this website, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                        <p>Additionally, when using this website's particular services, you shall be subject to any posted guidelines or rules applicable to such services. Any participation in this service will constitute acceptance of this agreement. If you do not agree to abide by the above, please do not use this service.</p>
+                    </section>
+
+                    <!-- User Accounts -->
+                    <section id="account" class="mb-5">
+                        <h2 class="section-title">2. User Accounts</h2>
+                        <p>When you create an account with us, you must provide information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.</p>
+                        <p>You are responsible for safeguarding the password that you use to access the Service and for any activities or actions under your password, whether your password is with our Service or a third-party service.</p>
+                        <p>You agree not to disclose your password to any third party. You must notify us immediately upon becoming aware of any breach of security or unauthorized use of your account.</p>
+                    </section>
+
+                    <!-- Orders & Payments -->
+                    <section id="orders" class="mb-5">
+                        <h2 class="section-title">3. Orders & Payments</h2>
+                        <h5>Order Acceptance</h5>
+                        <p>All orders are subject to acceptance and availability. We reserve the right to refuse any order you place with us.</p>
+                        
+                        <h5>Pricing</h5>
+                        <p>All prices are shown in Bangladeshi Taka (৳) and include VAT where applicable. We reserve the right to change prices at any time without notice.</p>
+                        
+                        <h5>Payment Methods</h5>
+                        <p>We accept various payment methods including credit/debit cards, mobile banking, and cash on delivery. All payments are processed securely through our payment gateway partners.</p>
+                    </section>
+
+                    <!-- Shipping & Delivery -->
+                    <section id="shipping" class="mb-5">
+                        <h2 class="section-title">4. Shipping & Delivery</h2>
+                        <h5>Shipping Areas</h5>
+                        <p>We currently ship to all districts within Bangladesh. Delivery times may vary depending on your location.</p>
+                        
+                        <h5>Delivery Times</h5>
+                        <p>Standard delivery: 3-5 business days<br>
+                        Express delivery: 1-2 business days<br>
+                        Same-day delivery: Available in selected areas</p>
+                        
+                        <h5>Shipping Costs</h5>
+                        <p>Shipping costs are calculated based on your location and order weight. Free shipping is available for orders over ৳2000.</p>
+                    </section>
+
+                    <!-- Returns & Refunds -->
+                    <section id="returns" class="mb-5">
+                        <h2 class="section-title">5. Returns & Refunds</h2>
+                        <h5>Return Policy</h5>
+                        <p>We offer a 30-day return policy for most items. Products must be unused and in their original packaging with all tags attached.</p>
+                        
+                        <h5>Non-returnable Items</h5>
+                        <ul>
+                            <li>Personalized or custom-made products</li>
+                            <li>Perishable goods</li>
+                            <li>Intimate or sanitary products</li>
+                            <li>Software and digital products</li>
+                        </ul>
+                        
+                        <h5>Refund Process</h5>
+                        <p>Refunds will be processed within 7-10 business days after we receive and inspect the returned item. The refund will be issued to your original payment method.</p>
+                    </section>
+
+                    <!-- Intellectual Property -->
+                    <section id="intellectual" class="mb-5">
+                        <h2 class="section-title">6. Intellectual Property</h2>
+                        <p>The Service and its original content, features, and functionality are and will remain the exclusive property of {{ site_settings.site_name }} and its licensors.</p>
+                        <p>Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of {{ site_settings.site_name }}.</p>
+                    </section>
+
+                    <!-- Limitation of Liability -->
+                    <section id="liability" class="mb-5">
+                        <h2 class="section-title">7. Limitation of Liability</h2>
+                        <p>In no event shall {{ site_settings.site_name }}, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:</p>
+                        <ul>
+                            <li>Your access to or use of or inability to access or use the Service</li>
+                            <li>Any conduct or content of any third party on the Service</li>
+                            <li>Any content obtained from the Service</li>
+                            <li>Unauthorized access, use or alteration of your transmissions or content</li>
+                        </ul>
+                    </section>
+
+                    <!-- Changes to Terms -->
+                    <section id="changes">
+                        <h2 class="section-title">8. Changes to Terms</h2>
+                        <p>We reserve the right, at our sole discretion, to modify or replace these Terms at any time. If a revision is material we will try to provide at least 30 days' notice prior to any new terms taking effect. What constitutes a material change will be determined at our sole discretion.</p>
+                        <p>By continuing to access or use our Service after those revisions become effective, you agree to be bound by the revised terms. If you do not agree to the new terms, please stop using the Service.</p>
+                    </section>
+
+                    <!-- Contact Information -->
+                    <div class="alert alert-info mt-5">
+                        <h5><i class="fas fa-info-circle me-2"></i>Need Help?</h5>
+                        <p class="mb-0">If you have any questions about these Terms, please contact us at <a href="mailto:{{ site_settings.contact_email }}">{{ site_settings.contact_email }}</a> or call us at {{ site_settings.contact_phone }}.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Smooth scrolling for terms navigation
+    $('.terms-nav .nav-link').on('click', function(e) {
+        e.preventDefault();
+        const target = $(this).attr('href');
+        
+        $('html, body').animate({
+            scrollTop: $(target).offset().top - 100
+        }, 500);
+        
+        // Update active nav link
+        $('.terms-nav .nav-link').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    // Update active nav link on scroll
+    $(window).on('scroll', function() {
+        const scrollPos = $(document).scrollTop();
+        
+        $('.terms-content section').each(function() {
+            const sectionTop = $(this).offset().top - 120;
+            const sectionBottom = sectionTop + $(this).outerHeight();
+            const sectionId = $(this).attr('id');
+            
+            if (scrollPos >= sectionTop && scrollPos < sectionBottom) {
+                $('.terms-nav .nav-link').removeClass('active');
+                $('.terms-nav .nav-link[href="#' + sectionId + '"]').addClass('active');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
