@@ -1,0 +1,311 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Add Blog Category - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.category-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    background: #f8f9fa;
+}
+.preview-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.slug-preview {
+    background: #e9ecef;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add Blog Category</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:blog_categories' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Categories
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Category Details</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="blog-category-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Category Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Category Name (Bengali)</label>
+                                {{ form.name_bn }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Slug *</label>
+                        <div class="input-group">
+                            {{ form.slug }}
+                            <button class="btn btn-outline-secondary" type="button" id="generate-slug">
+                                <i class="fas fa-magic"></i>
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">URL-friendly version of the name</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                        <small class="form-text text-muted">Brief description of the category</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description (Bengali)</label>
+                        {{ form.description_bn }}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_active }}
+                                <label class="form-check-label">Active Category</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_featured }}
+                                <label class="form-check-label">Featured Category</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Meta Title</label>
+                                {{ form.meta_title }}
+                                <small class="form-text text-muted">SEO title tag</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Meta Description</label>
+                                {{ form.meta_description }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Save Category
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo me-2"></i> Reset
+                        </button>
+                        <a href="{% url 'admin_dashboard:blog_categories' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Category Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Category Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="category-preview">
+                    <div class="preview-card">
+                        <h4 id="preview-name" class="mb-2">Category Name</h4>
+                        <div class="slug-preview mb-3" id="preview-slug">category-slug</div>
+                        <p id="preview-description" class="text-muted mb-3">
+                            Category description will appear here...
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-success" id="preview-status">Active</span>
+                                <span class="badge bg-warning d-none" id="preview-featured">Featured</span>
+                            </div>
+                            <small class="text-muted">0 posts</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">SEO Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="seo-preview">
+                    <h6 id="seo-title" class="text-primary mb-1" style="font-size: 0.9em;">
+                        Category Name - {{ site_settings.site_name }}
+                    </h6>
+                    <p id="seo-description" class="text-muted small mb-0" style="font-size: 0.8em;">
+                        Category description for search engines...
+                    </p>
+                    <div class="text-success small mt-1" id="seo-url">
+                        https://yoursite.com/blog/category/<span id="seo-slug">category-slug</span>/
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info btn-sm" id="generate-meta">
+                        <i class="fas fa-magic me-1"></i> Generate Meta Tags
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="duplicate-category">
+                        <i class="fas fa-copy me-1"></i> Duplicate Existing
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-generate slug
+    function generateSlug() {
+        const name = $('input[name="name"]').val();
+        if (name) {
+            const slug = name.toLowerCase()
+                .replace(/[^a-z0-9 -]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            $('input[name="slug"]').val(slug);
+            updatePreview();
+        }
+    }
+
+    $('input[name="name"]').on('blur', function() {
+        if (!$('input[name="slug"]').val()) {
+            generateSlug();
+        }
+    });
+
+    $('#generate-slug').on('click', generateSlug);
+
+    // Real-time preview updates
+    function updatePreview() {
+        $('#preview-name').text($('input[name="name"]').val() || 'Category Name');
+        $('#preview-slug').text($('input[name="slug"]').val() || 'category-slug');
+        $('#preview-description').text($('textarea[name="description"]').val() || 'Category description will appear here...');
+        
+        // SEO preview
+        $('#seo-title').text(($('input[name="meta_title"]').val() || $('input[name="name"]').val() || 'Category Name') + ' - {{ site_settings.site_name }}');
+        $('#seo-description').text($('textarea[name="meta_description"]').val() || $('textarea[name="description"]').val() || 'Category description for search engines...');
+        $('#seo-slug').text($('input[name="slug"]').val() || 'category-slug');
+    }
+
+    $('input[name="name"]').on('input', updatePreview);
+    $('input[name="slug"]').on('input', updatePreview);
+    $('textarea[name="description"]').on('input', updatePreview);
+    $('input[name="meta_title"]').on('input', updatePreview);
+    $('textarea[name="meta_description"]').on('input', updatePreview);
+
+    $('input[name="is_active"]').on('change', function() {
+        $('#preview-status').text(this.checked ? 'Active' : 'Inactive')
+            .toggleClass('bg-success bg-secondary', this.checked);
+    });
+
+    $('input[name="is_featured"]').on('change', function() {
+        $('#preview-featured').toggleClass('d-none', !this.checked);
+    });
+
+    // Generate meta tags
+    $('#generate-meta').on('click', function() {
+        const name = $('input[name="name"]').val();
+        const description = $('textarea[name="description"]').val();
+        
+        if (name) {
+            $('input[name="meta_title"]').val(name + ' - Blog Category');
+            $('textarea[name="meta_description"]').val(
+                description || `Read all blog posts in ${name} category. Latest articles, news, and updates.`
+            );
+            updatePreview();
+            showNotification('Meta tags generated successfully!', 'success');
+        }
+    });
+
+    // Form validation
+    $('#blog-category-form').on('submit', function(e) {
+        let valid = true;
+        
+        if (!$('input[name="name"]').val()) {
+            showNotification('Category name is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('input[name="slug"]').val()) {
+            showNotification('Slug is required', 'error');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize preview
+    updatePreview();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

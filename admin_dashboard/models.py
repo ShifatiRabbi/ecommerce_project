@@ -109,6 +109,58 @@ class Employee(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.position}"
 
+class EmployeeNotification(models.Model):
+    """Model for employee notifications"""
+    NOTIFICATION_TYPES = [
+        ('credentials', 'Login Credentials'),
+        ('password_reset', 'Password Reset'),
+        ('account_update', 'Account Update'),
+        ('system', 'System Notification'),
+        ('alert', 'Security Alert'),
+    ]
+    
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='system')
+    is_read = models.BooleanField(default=False)
+    sent_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Employee Notification"
+        verbose_name_plural = "Employee Notifications"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.title} - {self.employee.user.get_full_name()}"
+
+class EmailTemplate(models.Model):
+    """Model for email templates"""
+    TEMPLATE_TYPES = [
+        ('employee_credentials', 'Employee Credentials'),
+        ('password_reset', 'Password Reset'),
+        ('welcome', 'Welcome Email'),
+        ('notification', 'Notification'),
+        ('marketing', 'Marketing'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    template_type = models.CharField(max_length=30, choices=TEMPLATE_TYPES, unique=True)
+    subject = models.CharField(max_length=200)
+    content = models.TextField(help_text="Use {{ variable_name }} for dynamic content")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Email Template"
+        verbose_name_plural = "Email Templates"
+    
+    def __str__(self):
+        return f"{self.name} ({self.template_type})"
+    
+    
 class BlogCategory(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True)

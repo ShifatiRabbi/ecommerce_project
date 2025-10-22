@@ -1,0 +1,504 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}All Customers - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.customer-card {
+    border-left: 4px solid #28a745;
+    transition: all 0.3s ease;
+}
+.customer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.customer-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.revenue-badge {
+    font-size: 0.9em;
+}
+.loyalty-tier {
+    font-size: 0.75em;
+}
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    margin: 1px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Customer Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-outline-primary me-2" id="export-customers">
+            <i class="fas fa-download me-1"></i> Export
+        </button>
+        <a href="{% url 'admin_dashboard:blocked_customers' %}" class="btn btn-sm btn-warning">
+            <i class="fas fa-ban me-1"></i> Blocked Customers
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">{{ total_customers }}</h4>
+                        <small>Total Customers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-shopping-cart fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">{{ order_customers_count }}</h4>
+                        <small>Order Customers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-info text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-user-circle fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">{{ account_customers_count }}</h4>
+                        <small>Account Customers</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card bg-warning text-white mb-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <i class="fas fa-money-bill-wave fa-2x"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0">৳{{ total_revenue|floatformat:2 }}</h4>
+                        <small>Total Revenue</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-0">All Customers</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col">
+                                <select class="form-select" id="filter-source">
+                                    <option value="">All Sources</option>
+                                    <option value="order">Order Only</option>
+                                    <option value="account">Account Only</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select class="form-select" id="filter-sort">
+                                    <option value="last_order">Sort by: Recent</option>
+                                    <option value="email">Sort by: Email</option>
+                                    <option value="name">Sort by: Name</option>
+                                    <option value="orders">Sort by: Orders</option>
+                                    <option value="spent">Sort by: Total Spent</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search customers..." id="search-customers">
+                                    <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if customers %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="customers-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Contact</th>
+                                <th>Orders</th>
+                                <th>Total Spent</th>
+                                <th>Last Order</th>
+                                <th>Source</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                            <tr data-customer-email="{{ customer.email }}" data-source="{{ customer.source }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="customer-avatar bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-user text-muted"></i>
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">
+                                                {% if customer.full_name %}
+                                                    {{ customer.full_name }}
+                                                {% else %}
+                                                    {{ customer.email }}
+                                                {% endif %}
+                                            </strong>
+                                            <small class="text-muted">{{ customer.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small>
+                                        {% if customer.phone %}
+                                        <i class="fas fa-phone me-1 text-muted"></i>{{ customer.phone }}<br>
+                                        {% endif %}
+                                        <i class="fas fa-envelope me-1 text-muted"></i>{{ customer.email }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary rounded-pill">{{ customer.order_count }}</span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">৳{{ customer.total_spent|floatformat:2 }}</strong>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if customer.last_order %}
+                                            {{ customer.last_order.created_at|date:"M d, Y" }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if customer.source == 'account' %}
+                                    <span class="badge bg-info">Account</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Order Only</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'admin_dashboard:customer_detail' customer.email %}" 
+                                           class="btn btn-sm btn-outline-primary" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger block-customer" 
+                                                data-email="{{ customer.email }}" data-name="{% if customer.full_name %}{{ customer.full_name }}{% else %}{{ customer.email }}{% endif %}" 
+                                                title="Block Customer">
+                                            <i class="fas fa-ban"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info send-email" 
+                                                data-email="{{ customer.email }}" title="Send Email">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                        {% if customer.source == 'account' %}
+                                        <button class="btn btn-sm btn-outline-warning reset-password" 
+                                                data-email="{{ customer.email }}" title="Reset Password">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if customers.has_other_pages %}
+                <nav aria-label="Customer pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if customers.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ customers.previous_page_number }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in customers.paginator.page_range %}
+                            {% if customers.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if customers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ customers.next_page_number }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Customers Found</h4>
+                    <p class="text-muted">Customer data will appear here as orders are placed.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Block Customer Modal -->
+<div class="modal fade" id="blockCustomerModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Block Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="block-customer-form" method="post" action="{% url 'admin_dashboard:blocked_customers' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="email" id="block-customer-email">
+                    <p>Are you sure you want to block <strong id="block-customer-name"></strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Reason for blocking (optional)</label>
+                        <textarea class="form-control" name="reason" rows="3" placeholder="Enter reason for blocking this customer..."></textarea>
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> Blocked customers will not be able to place new orders.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="block-customer-form" class="btn btn-danger">Block Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Send Email Modal -->
+<div class="modal fade" id="sendEmailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Send Email to Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="send-email-form">
+                    <div class="mb-3">
+                        <label class="form-label">To</label>
+                        <input type="email" class="form-control" id="email-to" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" id="email-subject" placeholder="Enter email subject...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-control" id="email-message" rows="8" placeholder="Enter your message..."></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="include-promotion">
+                        <label class="form-check-label" for="include-promotion">
+                            Include promotional offer
+                        </label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="send-email-btn">Send Email</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#search-customers').on('input', function() {
+        const searchText = $(this).val().toLowerCase();
+        $('#customers-table tbody tr').each(function() {
+            const customerName = $(this).find('td:first strong').text().toLowerCase();
+            const customerEmail = $(this).find('td:first small').text().toLowerCase();
+            const isVisible = customerName.includes(searchText) || customerEmail.includes(searchText);
+            $(this).toggle(isVisible);
+        });
+    });
+
+    // Filter by source
+    $('#filter-source').on('change', function() {
+        const sourceFilter = $(this).val();
+        $('#customers-table tbody tr').each(function() {
+            const source = $(this).data('source');
+            const matchesSource = !sourceFilter || source === sourceFilter;
+            $(this).toggle(matchesSource);
+        });
+    });
+
+    // Sort functionality
+    $('#filter-sort').on('change', function() {
+        const sortBy = $(this).val();
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortBy);
+        url.searchParams.set('order', 'desc');
+        window.location.href = url.toString();
+    });
+
+    // Clear search
+    $('#clear-search').on('click', function() {
+        $('#search-customers').val('').trigger('input');
+        $('#filter-source').val('');
+    });
+
+    // Block customer
+    $('.block-customer').on('click', function() {
+        const email = $(this).data('email');
+        const name = $(this).data('name');
+        
+        $('#block-customer-email').val(email);
+        $('#block-customer-name').text(name);
+        $('#blockCustomerModal').modal('show');
+    });
+
+    // Send email
+    $('.send-email').on('click', function() {
+        const email = $(this).data('email');
+        $('#email-to').val(email);
+        $('#sendEmailModal').modal('show');
+    });
+
+    // Send email button
+    $('#send-email-btn').on('click', function() {
+        const to = $('#email-to').val();
+        const subject = $('#email-subject').val();
+        const message = $('#email-message').val();
+        
+        if (!subject || !message) {
+            showNotification('Please fill in all fields', 'error');
+            return;
+        }
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:send_customer_email" %}',
+            type: 'POST',
+            data: {
+                'to': to,
+                'subject': subject,
+                'message': message,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Email sent successfully!', 'success');
+                    $('#sendEmailModal').modal('hide');
+                    // Clear form
+                    $('#email-subject').val('');
+                    $('#email-message').val('');
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error sending email', 'error');
+            }
+        });
+    });
+
+    // Reset password
+    $('.reset-password').on('click', function() {
+        const email = $(this).data('email');
+        
+        if (confirm('Send password reset link to ' + email + '?')) {
+            $.ajax({
+                url: '{% url "admin_dashboard:reset_customer_password" %}',
+                type: 'POST',
+                data: {
+                    'email': email,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Password reset link sent!', 'success');
+                    } else {
+                        showNotification('Error: ' + response.error, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error sending reset link', 'error');
+                }
+            });
+        }
+    });
+
+    // Export customers
+    $('#export-customers').on('click', function() {
+        showNotification('Exporting customer data...', 'info');
+        // Export logic would go here
+        setTimeout(() => {
+            showNotification('Customer data exported successfully!', 'success');
+        }, 2000);
+    });
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

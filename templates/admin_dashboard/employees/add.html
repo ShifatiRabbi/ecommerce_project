@@ -1,0 +1,505 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Add Employee - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.employee-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    background: #f8f9fa;
+}
+.preview-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 15px;
+}
+.contact-info {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+.salary-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #28a745;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add New Employee</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:employee_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="employeeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" 
+                                data-bs-target="#basic" type="button" role="tab">
+                            <i class="fas fa-user me-1"></i> Basic Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="employment-tab" data-bs-toggle="tab" 
+                                data-bs-target="#employment" type="button" role="tab">
+                            <i class="fas fa-briefcase me-1"></i> Employment
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="contact-tab" data-bs-toggle="tab" 
+                                data-bs-target="#contact" type="button" role="tab">
+                            <i class="fas fa-address-card me-1"></i> Contact Info
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <form method="post" id="employee-form">
+                    {% csrf_token %}
+                    
+                    <div class="tab-content" id="employeeTabsContent">
+                        <!-- Basic Information Tab -->
+                        <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">First Name *</label>
+                                        {{ user_form.first_name }}
+                                        {% if user_form.first_name.errors %}
+                                        <div class="text-danger small">{{ user_form.first_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Last Name *</label>
+                                        {{ user_form.last_name }}
+                                        {% if user_form.last_name.errors %}
+                                        <div class="text-danger small">{{ user_form.last_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Address *</label>
+                                        {{ user_form.email }}
+                                        {% if user_form.email.errors %}
+                                        <div class="text-danger small">{{ user_form.email.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Username *</label>
+                                        {{ user_form.username }}
+                                        {% if user_form.username.errors %}
+                                        <div class="text-danger small">{{ user_form.username.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Note:</strong> A temporary password will be generated and should be changed by the employee upon first login.
+                            </div>
+                        </div>
+
+                        <!-- Employment Tab -->
+                        <div class="tab-pane fade" id="employment" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Employee ID</label>
+                                        {{ employee_form.employee_id }}
+                                        <small class="form-text text-muted">
+                                            Auto-generated: <strong id="next-employee-id">{{ next_employee_id }}</strong>
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Position *</label>
+                                        {{ employee_form.position }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Salary (৳) *</label>
+                                        {{ employee_form.salary }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Join Date *</label>
+                                        {{ employee_form.join_date }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        {{ employee_form.is_active }}
+                                        <label class="form-check-label">Active Employee</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Department</label>
+                                        {{ employee_form.department }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Tab -->
+                        <div class="tab-pane fade" id="contact" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone Number *</label>
+                                        {{ employee_form.phone }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Emergency Contact</label>
+                                        {{ employee_form.emergency_contact }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Address *</label>
+                                {{ employee_form.address }}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">City</label>
+                                        {{ employee_form.city }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Postal Code</label>
+                                        {{ employee_form.postal_code }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Save Employee
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo me-2"></i> Reset Form
+                        </button>
+                        <a href="{% url 'admin_dashboard:employee_list' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Employee Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Employee Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="employee-preview text-center">
+                    <div id="preview-avatar" class="mb-3">
+                        <i class="fas fa-user-circle fa-4x text-muted"></i>
+                    </div>
+                    <h4 id="preview-name" class="mb-2">Full Name</h4>
+                    <div class="text-muted mb-3" id="preview-position">Position</div>
+                    
+                    <div class="contact-info">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Employee ID:</span>
+                            <strong id="preview-employee-id">{{ next_employee_id }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Email:</span>
+                            <strong id="preview-email">email@example.com</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phone:</span>
+                            <strong id="preview-phone">+880 XXXXXXXX</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Salary:</span>
+                            <strong class="salary-display" id="preview-salary">৳0</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <span class="badge bg-success" id="preview-status">Active</span>
+                        <span class="badge bg-primary" id="preview-department">Department</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info" id="generate-username">
+                        <i class="fas fa-magic me-1"></i> Generate Username
+                    </button>
+                    <button type="button" class="btn btn-outline-success" id="duplicate-employee">
+                        <i class="fas fa-copy me-1"></i> Duplicate Existing
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" id="set-today-date">
+                        <i class="fas fa-calendar me-1"></i> Set Today's Date
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Progress -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Form Progress</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Basic Information</span>
+                        <span id="basic-progress">0%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" id="basic-progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Employment Details</span>
+                        <span id="employment-progress">0%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" id="employment-progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Contact Information</span>
+                        <span id="contact-progress">0%</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" id="contact-progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Real-time preview updates
+    function updatePreview() {
+        const firstName = $('input[name="first_name"]').val() || '';
+        const lastName = $('input[name="last_name"]').val() || '';
+        const fullName = (firstName + ' ' + lastName).trim() || 'Full Name';
+        
+        $('#preview-name').text(fullName);
+        $('#preview-email').text($('input[name="email"]').val() || 'email@example.com');
+        $('#preview-position').text($('select[name="position"]').find('option:selected').text() || 'Position');
+        $('#preview-employee-id').text($('input[name="employee_id"]').val() || '{{ next_employee_id }}');
+        $('#preview-phone').text($('input[name="phone"]').val() || '+880 XXXXXXXX');
+        $('#preview-salary').text('৳' + ($('input[name="salary"]').val() || '0'));
+        $('#preview-department').text($('input[name="department"]').val() || 'Department');
+    }
+
+    // Progress tracking
+    function updateProgress(section, percent) {
+        $(`#${section}-progress`).text(percent + '%');
+        $(`#${section}-progress-bar`).css('width', percent + '%');
+        
+        if (percent === 100) {
+            $(`#${section}-progress-bar`).addClass('bg-success');
+        } else {
+            $(`#${section}-progress-bar`).removeClass('bg-success');
+        }
+    }
+
+    // Basic info progress
+    $('input[name="first_name"], input[name="last_name"], input[name="email"], input[name="username"]').on('input', function() {
+        let progress = 0;
+        if ($('input[name="first_name"]').val()) progress += 25;
+        if ($('input[name="last_name"]').val()) progress += 25;
+        if ($('input[name="email"]').val()) progress += 25;
+        if ($('input[name="username"]').val()) progress += 25;
+        updateProgress('basic', progress);
+    });
+
+    // Employment progress
+    $('select[name="position"], input[name="salary"], input[name="join_date"]').on('input change', function() {
+        let progress = 0;
+        if ($('select[name="position"]').val()) progress += 40;
+        if ($('input[name="salary"]').val()) progress += 40;
+        if ($('input[name="join_date"]').val()) progress += 20;
+        updateProgress('employment', progress);
+    });
+
+    // Contact progress
+    $('input[name="phone"], textarea[name="address"]').on('input', function() {
+        let progress = 0;
+        if ($('input[name="phone"]').val()) progress += 50;
+        if ($('textarea[name="address"]').val()) progress += 50;
+        updateProgress('contact', progress);
+    });
+
+    // Generate username from email
+    $('#generate-username').on('click', function() {
+        const email = $('input[name="email"]').val();
+        if (email) {
+            const username = email.split('@')[0];
+            $('input[name="username"]').val(username);
+            updatePreview();
+        }
+    });
+
+    // Set today's date
+    $('#set-today-date').on('click', function() {
+        const today = new Date().toISOString().split('T')[0];
+        $('input[name="join_date"]').val(today);
+        updatePreview();
+        updateProgress('employment', 20);
+    });
+
+    // Auto-generate employee ID if empty
+    $('input[name="employee_id"]').on('blur', function() {
+        if (!$(this).val()) {
+            $(this).val('{{ next_employee_id }}');
+            updatePreview();
+        }
+    });
+
+    // Update preview on all changes
+    $('input, select, textarea').on('input change', updatePreview);
+
+    // Form validation
+    $('#employee-form').on('submit', function(e) {
+        let valid = true;
+        const errors = [];
+        
+        if (!$('input[name="first_name"]').val()) {
+            errors.push('First name is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="last_name"]').val()) {
+            errors.push('Last name is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="email"]').val()) {
+            errors.push('Email address is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="username"]').val()) {
+            errors.push('Username is required');
+            valid = false;
+        }
+        
+        if (!$('select[name="position"]').val()) {
+            errors.push('Position is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="salary"]').val() || parseFloat($('input[name="salary"]').val()) <= 0) {
+            errors.push('Valid salary is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="join_date"]').val()) {
+            errors.push('Join date is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="phone"]').val()) {
+            errors.push('Phone number is required');
+            valid = false;
+        }
+        
+        if (!$('textarea[name="address"]').val()) {
+            errors.push('Address is required');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            showNotification(errors.join('<br>'), 'error');
+            
+            // Switch to first tab with error
+            if (errors.some(err => err.includes('First name') || err.includes('Last name') || err.includes('Email') || err.includes('Username'))) {
+                $('#basic-tab').tab('show');
+            } else if (errors.some(err => err.includes('Position') || err.includes('Salary') || err.includes('Join date'))) {
+                $('#employment-tab').tab('show');
+            } else {
+                $('#contact-tab').tab('show');
+            }
+        }
+    });
+
+    // Initialize preview
+    updatePreview();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

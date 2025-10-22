@@ -1,0 +1,448 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Employees - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.employee-card {
+    border-left: 4px solid #007bff;
+    transition: all 0.3s ease;
+}
+.employee-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.employee-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.status-badge {
+    font-size: 0.75em;
+}
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    margin: 1px;
+}
+.employee-stats {
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Employee Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:add_employee' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add Employee
+        </a>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="employee-stats bg-primary text-white">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-users fa-2x"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ total_employees }}</h4>
+                    <small>Total Employees</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="employee-stats bg-success text-white">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-user-check fa-2x"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ active_employees }}</h4>
+                    <small>Active Employees</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="employee-stats bg-secondary text-white">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-user-slash fa-2x"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ inactive_employees }}</h4>
+                    <small>Inactive Employees</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="employee-stats bg-info text-white">
+            <div class="d-flex align-items-center">
+                <div class="me-3">
+                    <i class="fas fa-chart-line fa-2x"></i>
+                </div>
+                <div>
+                    <h4 class="mb-0">{{ total_employees }}</h4>
+                    <small>This Month</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-0">All Employees</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col">
+                                <select class="form-select" id="filter-status">
+                                    <option value="">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search employees..." id="search-employees">
+                                    <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if employees %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="employees-table">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Employee ID</th>
+                                <th>Position</th>
+                                <th>Contact</th>
+                                <th>Join Date</th>
+                                <th>Salary</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            <tr data-employee-id="{{ employee.id }}" data-status="{{ employee.is_active|yesno:'active,inactive' }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% if employee.user.profile.image %}{{ employee.user.profile.image.url }}{% else %}{% static 'images/default-avatar.png' %}{% endif %}" 
+                                             alt="{{ employee.user.get_full_name }}" class="employee-avatar me-3">
+                                        <div>
+                                            <strong class="d-block">{{ employee.user.get_full_name }}</strong>
+                                            <small class="text-muted">{{ employee.user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <code>{{ employee.employee_id }}</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ employee.position }}</span>
+                                </td>
+                                <td>
+                                    <small>
+                                        <i class="fas fa-phone me-1 text-muted"></i>{{ employee.phone }}<br>
+                                        <i class="fas fa-envelope me-1 text-muted"></i>{{ employee.user.email }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ employee.join_date|date:"M d, Y" }}</small>
+                                </td>
+                                <td>
+                                    <strong>৳{{ employee.salary }}</strong>
+                                </td>
+                                <td>
+                                    {% if employee.is_active %}
+                                    <span class="badge bg-success status-badge">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary status-badge">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'admin_dashboard:edit_employee' employee.id %}" 
+                                           class="btn btn-sm btn-outline-primary" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if employee.is_active %}
+                                        <button class="btn btn-sm btn-outline-warning toggle-employee" 
+                                                data-id="{{ employee.id }}" data-action="deactivate" title="Deactivate">
+                                            <i class="fas fa-user-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-success toggle-employee" 
+                                                data-id="{{ employee.id }}" data-action="activate" title="Activate">
+                                            <i class="fas fa-user-check"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-info" title="Send Credentials" 
+                                                onclick="sendCredentials({{ employee.id }})">
+                                            <i class="fas fa-envelope"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if employees.has_other_pages %}
+                <nav aria-label="Employee pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if employees.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ employees.previous_page_number }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in employees.paginator.page_range %}
+                            {% if employees.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if employees.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ employees.next_page_number }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Employees Found</h4>
+                    <p class="text-muted">Get started by adding your first employee.</p>
+                    <a href="{% url 'admin_dashboard:add_employee' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Add Employee
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Bulk Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <select class="form-select" id="bulk-action">
+                            <option value="">Choose Action...</option>
+                            <option value="activate">Activate Selected</option>
+                            <option value="deactivate">Deactivate Selected</option>
+                            <option value="export">Export Selected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <button class="btn btn-primary" id="apply-bulk-action">
+                            <i class="fas fa-play me-1"></i> Apply Action
+                        </button>
+                        <button class="btn btn-outline-secondary" id="select-all">
+                            <i class="fas fa-check-square me-1"></i> Select All
+                        </button>
+                        <button class="btn btn-outline-secondary" id="deselect-all">
+                            <i class="fas fa-square me-1"></i> Deselect All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#search-employees').on('input', function() {
+        const searchText = $(this).val().toLowerCase();
+        $('#employees-table tbody tr').each(function() {
+            const employeeName = $(this).find('td:first strong').text().toLowerCase();
+            const employeeEmail = $(this).find('td:first small').text().toLowerCase();
+            const employeeId = $(this).find('td:nth-child(2) code').text().toLowerCase();
+            const isVisible = employeeName.includes(searchText) || employeeEmail.includes(searchText) || employeeId.includes(searchText);
+            $(this).toggle(isVisible);
+        });
+    });
+
+    // Filter by status
+    $('#filter-status').on('change', function() {
+        const statusFilter = $(this).val();
+        $('#employees-table tbody tr').each(function() {
+            const status = $(this).data('status');
+            const matchesStatus = !statusFilter || status === statusFilter;
+            $(this).toggle(matchesStatus);
+        });
+    });
+
+    // Clear search
+    $('#clear-search').on('click', function() {
+        $('#search-employees').val('').trigger('input');
+        $('#filter-status').val('');
+    });
+
+    // Toggle employee status
+    $('.toggle-employee').on('click', function() {
+        const employeeId = $(this).data('id');
+        const action = $(this).data('action');
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:toggle_employee_status" 0 %}'.replace('0', employeeId),
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Employee ' + action + 'd successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error updating employee status', 'error');
+            }
+        });
+    });
+
+    // Bulk actions
+    $('#apply-bulk-action').on('click', function() {
+        const action = $('#bulk-action').val();
+        const selectedEmployees = $('.employee-checkbox:checked');
+        
+        if (!action) {
+            showNotification('Please select an action', 'error');
+            return;
+        }
+        
+        if (selectedEmployees.length === 0) {
+            showNotification('Please select at least one employee', 'error');
+            return;
+        }
+
+        const employeeIds = selectedEmployees.map(function() {
+            return $(this).val();
+        }).get();
+
+        performBulkAction(action, employeeIds);
+    });
+
+    function performBulkAction(action, employeeIds) {
+        $.ajax({
+            url: '{% url "admin_dashboard:bulk_employee_action" %}',
+            type: 'POST',
+            data: {
+                'action': action,
+                'employee_ids': employeeIds,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error performing bulk action', 'error');
+            }
+        });
+    }
+
+    // Select all functionality
+    $('#select-all').on('click', function() {
+        $('.employee-checkbox').prop('checked', true);
+    });
+
+    $('#deselect-all').on('click', function() {
+        $('.employee-checkbox').prop('checked', false);
+    });
+});
+
+function sendCredentials(employeeId) {
+    if (confirm('Send login credentials to this employee?')) {
+        $.ajax({
+            url: '/admin-dashboard/employees/' + employeeId + '/send-credentials/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Credentials sent successfully!', 'success');
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error sending credentials', 'error');
+            }
+        });
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

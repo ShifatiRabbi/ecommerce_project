@@ -932,6 +932,449 @@ function debounce(func, wait, immediate) {
     };
 }
 
+// Image Upload and Preview Functionality
+function initializeImageUpload(previewId, inputId) {
+    const preview = document.getElementById(previewId);
+    const input = document.getElementById(inputId);
+    
+    if (input && preview) {
+        input.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `<img src="${e.target.result}" class="img-fluid rounded" alt="Preview">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+// Drag and Drop Functionality
+function initializeDragDrop(uploadAreaId, inputId, thumbnailContainerId) {
+    const uploadArea = document.getElementById(uploadAreaId);
+    const fileInput = document.getElementById(inputId);
+    const thumbnailContainer = document.getElementById(thumbnailContainerId);
+    
+    if (uploadArea && fileInput) {
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files, thumbnailContainer, fileInput);
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files, thumbnailContainer, fileInput);
+        });
+    }
+}
+
+function handleFiles(files, thumbnailContainer, fileInput) {
+    for (let file of files) {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const thumbnail = document.createElement('div');
+                thumbnail.className = 'image-thumbnail';
+                thumbnail.innerHTML = `
+                    <img src="${e.target.result}" alt="Thumbnail">
+                    <div class="remove-image" onclick="this.parentElement.remove(); updateImageCount();">
+                        <i class="fas fa-times"></i>
+                    </div>
+                `;
+                if (thumbnailContainer) {
+                    thumbnailContainer.appendChild(thumbnail);
+                }
+                updateImageCount();
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+}
+
+function updateImageCount() {
+    // Implement image count logic if needed
+}
+
+// Auto-generate Slug
+function initializeSlugGenerator(nameFieldId, slugFieldId, generateButtonId) {
+    const nameField = document.getElementById(nameFieldId);
+    const slugField = document.getElementById(slugFieldId);
+    const generateButton = document.getElementById(generateButtonId);
+    
+    if (nameField && slugField) {
+        const generateSlug = () => {
+            const name = nameField.value;
+            if (name) {
+                const slug = name.toLowerCase()
+                    .replace(/[^a-z0-9 -]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+                slugField.value = slug;
+            }
+        };
+        
+        nameField.addEventListener('blur', () => {
+            if (!slugField.value) {
+                generateSlug();
+            }
+        });
+        
+        if (generateButton) {
+            generateButton.addEventListener('click', generateSlug);
+        }
+    }
+}
+
+// Form Validation
+function initializeFormValidation(formId, rules) {
+    const form = document.getElementById(formId);
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            const errors = [];
+            
+            rules.forEach(rule => {
+                const field = form.querySelector(rule.selector);
+                if (field && !rule.validator(field.value)) {
+                    isValid = false;
+                    errors.push(rule.message);
+                    field.classList.add('is-invalid');
+                } else if (field) {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                showNotification(errors.join('<br>'), 'error');
+            }
+        });
+    }
+}
+
+// Notification System
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const icon = type === 'success' ? 'check' : 
+                type === 'error' ? 'exclamation-triangle' : 'info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${icon} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    // Remove existing alerts
+    $('.alert-dismissible').alert('close');
+    
+    // Add to messages container or create one
+    let container = $('.messages-container');
+    if (container.length === 0) {
+        container = $('<div class="messages-container fixed-top mt-5 mx-3"></div>');
+        $('body').prepend(container);
+    }
+    
+    container.html(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => notification.alert('close'), 5000);
+}
+
+// SEO Score Calculator
+function calculateSEOScore(fields) {
+    let score = 0;
+    const maxScore = 100;
+    
+    if (fields.title && fields.title.length > 10) score += 20;
+    if (fields.description && fields.description.length > 50) score += 15;
+    if (fields.content && fields.content.length > 200) score += 25;
+    if (fields.metaTitle && fields.metaTitle.length > 30 && fields.metaTitle.length < 60) score += 20;
+    if (fields.metaDescription && fields.metaDescription.length > 100 && fields.metaDescription.length < 160) score += 15;
+    if (fields.image) score += 5;
+    
+    return Math.min(score, maxScore);
+}
+
+function updateSEOScoreDisplay(scoreElementId, feedbackElementId, score) {
+    const scoreElement = document.getElementById(scoreElementId);
+    const feedbackElement = document.getElementById(feedbackElementId);
+    
+    if (scoreElement) {
+        scoreElement.textContent = score + '%';
+        scoreElement.parentElement.style.setProperty('--value', score + '%');
+    }
+    
+    if (feedbackElement) {
+        let feedback = '';
+        if (score < 50) {
+            feedback = 'Add more content and optimize meta tags for better SEO.';
+        } else if (score < 80) {
+            feedback = 'Good start! Consider adding more detailed content.';
+        } else {
+            feedback = 'Excellent! Your content is well-optimized for SEO.';
+        }
+        feedbackElement.innerHTML = `<p class="small">${feedback}</p>`;
+    }
+}
+
+// Bulk Actions
+function initializeBulkActions(checkboxClass, actionSelectId, endpoint) {
+    const checkboxes = document.querySelectorAll(checkboxClass);
+    const actionSelect = document.getElementById(actionSelectId);
+    
+    if (actionSelect) {
+        actionSelect.addEventListener('change', function() {
+            const action = this.value;
+            if (action) {
+                const selectedIds = Array.from(checkboxes)
+                    .filter(cb => cb.checked)
+                    .map(cb => cb.value);
+                
+                if (selectedIds.length === 0) {
+                    showNotification('Please select at least one item', 'error');
+                    return;
+                }
+                
+                if (action === 'delete' && !confirm('Are you sure you want to delete selected items?')) {
+                    this.value = '';
+                    return;
+                }
+                
+                performBulkAction(action, selectedIds, endpoint);
+                this.value = '';
+            }
+        });
+    }
+}
+
+function performBulkAction(action, ids, endpoint) {
+    $.ajax({
+        url: endpoint,
+        type: 'POST',
+        data: {
+            'action': action,
+            'ids': ids,
+            'csrfmiddlewaretoken': getCSRFToken()
+        },
+        success: function(response) {
+            if (response.success) {
+                showNotification(response.message, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification('Error: ' + response.error, 'error');
+            }
+        },
+        error: function() {
+            showNotification('Error performing bulk action', 'error');
+        }
+    });
+}
+
+// CSRF Token Helper
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+
+// Search and Filter
+function initializeSearchFilter(searchInputId, tableId, searchColumns) {
+    const searchInput = document.getElementById(searchInputId);
+    const table = document.getElementById(tableId);
+    
+    if (searchInput && table) {
+        searchInput.addEventListener('input', function() {
+            const searchText = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                let matches = false;
+                searchColumns.forEach(colIndex => {
+                    const cell = row.querySelector(`td:nth-child(${colIndex})`);
+                    if (cell && cell.textContent.toLowerCase().includes(searchText)) {
+                        matches = true;
+                    }
+                });
+                row.style.display = matches ? '' : 'none';
+            });
+        });
+    }
+}
+
+// Real-time Preview
+function initializeRealTimePreview(sourceFieldId, previewElementId, transformFn = null) {
+    const sourceField = document.getElementById(sourceFieldId);
+    const previewElement = document.getElementById(previewElementId);
+    
+    if (sourceField && previewElement) {
+        sourceField.addEventListener('input', function() {
+            let value = this.value;
+            if (transformFn) {
+                value = transformFn(value);
+            }
+            previewElement.textContent = value || previewElement.dataset.placeholder || '';
+        });
+    }
+}
+
+// Character Counter
+function initializeCharacterCounter(fieldId, counterId, maxLength) {
+    const field = document.getElementById(fieldId);
+    const counter = document.getElementById(counterId);
+    
+    if (field && counter) {
+        field.addEventListener('input', function() {
+            const length = this.value.length;
+            counter.textContent = `${length}/${maxLength}`;
+            
+            if (length > maxLength) {
+                counter.classList.add('text-danger');
+            } else {
+                counter.classList.remove('text-danger');
+            }
+        });
+        
+        // Initialize counter
+        counter.textContent = `${field.value.length}/${maxLength}`;
+    }
+}
+
+// Tab Persistence
+function initializeTabPersistence(tabGroupId) {
+    const tabGroup = document.getElementById(tabGroupId);
+    if (tabGroup) {
+        const tabs = tabGroup.querySelectorAll('[data-bs-toggle="tab"]');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                localStorage.setItem(`${tabGroupId}-active-tab`, this.id);
+            });
+        });
+        
+        // Restore active tab
+        const activeTabId = localStorage.getItem(`${tabGroupId}-active-tab`);
+        if (activeTabId) {
+            const activeTab = document.getElementById(activeTabId);
+            if (activeTab) {
+                new bootstrap.Tab(activeTab).show();
+            }
+        }
+    }
+}
+
+// Auto-save Draft
+function initializeAutoSave(formId, endpoint, interval = 30000) {
+    const form = document.getElementById(formId);
+    let saveTimeout;
+    
+    if (form) {
+        form.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveDraft(formId, endpoint);
+            }, interval);
+        });
+    }
+}
+
+function saveDraft(formId, endpoint) {
+    const form = document.getElementById(formId);
+    const formData = new FormData(form);
+    
+    $.ajax({
+        url: endpoint,
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                showNotification('Draft saved automatically', 'success');
+            }
+        }
+    });
+}
+
+// Initialize all components when document is ready
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-bs-toggle="tooltip"]').tooltip();
+    
+    // Initialize popovers
+    $('[data-bs-toggle="popover"]').popover();
+    
+    // Auto-dismiss alerts after 5 seconds
+    $('.alert-auto-dismiss').delay(5000).fadeOut(300);
+    
+    // Confirm delete actions
+    $('.confirm-delete').on('click', function(e) {
+        if (!confirm('Are you sure you want to delete this item?')) {
+            e.preventDefault();
+        }
+    });
+    
+    // Toggle switches
+    $('.toggle-switch').on('change', function() {
+        const itemId = $(this).data('id');
+        const action = this.checked ? 'activate' : 'deactivate';
+        const endpoint = $(this).data('endpoint');
+        
+        $.ajax({
+            url: endpoint,
+            type: 'POST',
+            data: {
+                'id': itemId,
+                'action': action,
+                'csrfmiddlewaretoken': getCSRFToken()
+            },
+            success: function(response) {
+                if (!response.success) {
+                    showNotification('Error: ' + response.error, 'error');
+                    // Revert the switch
+                    $(this).prop('checked', !$(this).prop('checked'));
+                }
+            }.bind(this),
+            error: function() {
+                showNotification('Error updating status', 'error');
+                // Revert the switch
+                $(this).prop('checked', !$(this).prop('checked'));
+            }.bind(this)
+        });
+    });
+});
+
+// Export functions for global use
+window.AdminDashboard = {
+    showNotification,
+    initializeImageUpload,
+    initializeDragDrop,
+    initializeSlugGenerator,
+    initializeFormValidation,
+    calculateSEOScore,
+    updateSEOScoreDisplay,
+    initializeBulkActions,
+    initializeSearchFilter,
+    initializeRealTimePreview,
+    initializeCharacterCounter,
+    initializeTabPersistence,
+    initializeAutoSave
+};
+
 // Export utility functions for global use
 window.adminUtils = {
     formatCurrency,

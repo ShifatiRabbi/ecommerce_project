@@ -1,0 +1,445 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Blog Posts - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.blog-card {
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+.blog-card:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+.blog-image {
+    height: 120px;
+    object-fit: cover;
+}
+.status-badge {
+    font-size: 0.75em;
+}
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+.thumbnail {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Blog Posts</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:add_blog' %}" class="btn btn-sm btn-primary">
+            <i class="fas fa-plus me-1"></i> Add New Post
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-file-alt fa-2x text-primary"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0" id="total-posts">{{ blogs.count }}</h4>
+                                <small class="text-muted">Total Posts</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-eye fa-2x text-success"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0" id="published-posts">{{ published_count }}</h4>
+                                <small class="text-muted">Published</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-pencil-alt fa-2x text-warning"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0" id="draft-posts">{{ draft_count }}</h4>
+                                <small class="text-muted">Drafts</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="me-3">
+                                <i class="fas fa-star fa-2x text-info"></i>
+                            </div>
+                            <div>
+                                <h4 class="mb-0" id="featured-posts">{{ featured_count }}</h4>
+                                <small class="text-muted">Featured</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-0">All Blog Posts</h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col">
+                                <select class="form-select" id="filter-status">
+                                    <option value="">All Status</option>
+                                    <option value="published">Published</option>
+                                    <option value="draft">Draft</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <select class="form-select" id="filter-category">
+                                    <option value="">All Categories</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Search..." id="search-blogs">
+                                    <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if blogs %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="blogs-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Image</th>
+                                <th>Title</th>
+                                <th>Category</th>
+                                <th>Author</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Views</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for blog in blogs %}
+                            <tr data-blog-id="{{ blog.id }}" data-status="{{ blog.is_published|yesno:'published,draft' }}" data-category="{{ blog.category.id }}">
+                                <td>
+                                    <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="thumbnail">
+                                </td>
+                                <td>
+                                    <div>
+                                        <strong class="d-block">{{ blog.title }}</strong>
+                                        <small class="text-muted">{{ blog.slug }}</small>
+                                        {% if blog.is_featured %}
+                                        <span class="badge bg-warning ms-1">Featured</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ blog.category.name }}</span>
+                                </td>
+                                <td>
+                                    <small>{{ blog.author.get_full_name }}</small>
+                                </td>
+                                <td>
+                                    {% if blog.is_published %}
+                                    <span class="badge bg-success status-badge">Published</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary status-badge">Draft</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {% if blog.published_date %}
+                                        {{ blog.published_date|date:"M d, Y" }}
+                                        {% else %}
+                                        {{ blog.created_at|date:"M d, Y" }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info rounded-pill">{{ blog.views|default:0 }}</span>
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="{% url 'blog_detail' blog.slug %}" target="_blank" 
+                                           class="btn btn-sm btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'admin_dashboard:edit_blog' blog.id %}" 
+                                           class="btn btn-sm btn-outline-success" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger delete-blog" 
+                                                data-id="{{ blog.id }}" data-title="{{ blog.title }}" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% if blog.is_published %}
+                                        <button class="btn btn-sm btn-outline-warning toggle-blog" 
+                                                data-id="{{ blog.id }}" data-action="unpublish" title="Unpublish">
+                                            <i class="fas fa-eye-slash"></i>
+                                        </button>
+                                        {% else %}
+                                        <button class="btn btn-sm btn-outline-info toggle-blog" 
+                                                data-id="{{ blog.id }}" data-action="publish" title="Publish">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if blogs.has_other_pages %}
+                <nav aria-label="Blog pagination">
+                    <ul class="pagination justify-content-center">
+                        {% if blogs.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ blogs.previous_page_number }}">Previous</a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in blogs.paginator.page_range %}
+                            {% if blogs.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if blogs.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ blogs.next_page_number }}">Next</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Blog Posts Found</h4>
+                    <p class="text-muted">Get started by creating your first blog post.</p>
+                    <a href="{% url 'admin_dashboard:add_blog' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i> Create Post
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteBlogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the blog post "<strong id="delete-blog-title"></strong>"?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action cannot be undone. All comments and associated data will be lost.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delete-blog-form" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Post</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#search-blogs').on('input', function() {
+        const searchText = $(this).val().toLowerCase();
+        filterBlogs();
+    });
+
+    // Filter by status
+    $('#filter-status').on('change', filterBlogs);
+
+    // Filter by category
+    $('#filter-category').on('change', filterBlogs);
+
+    // Clear search
+    $('#clear-search').on('click', function() {
+        $('#search-blogs').val('').trigger('input');
+        $('#filter-status').val('');
+        $('#filter-category').val('');
+        filterBlogs();
+    });
+
+    function filterBlogs() {
+        const searchText = $('#search-blogs').val().toLowerCase();
+        const statusFilter = $('#filter-status').val();
+        const categoryFilter = $('#filter-category').val();
+
+        $('#blogs-table tbody tr').each(function() {
+            const title = $(this).find('td:nth-child(2) strong').text().toLowerCase();
+            const status = $(this).data('status');
+            const category = $(this).data('category').toString();
+
+            const matchesSearch = !searchText || title.includes(searchText);
+            const matchesStatus = !statusFilter || status === statusFilter;
+            const matchesCategory = !categoryFilter || category === categoryFilter;
+
+            $(this).toggle(matchesSearch && matchesStatus && matchesCategory);
+        });
+    }
+
+    // Delete blog confirmation
+    $('.delete-blog').on('click', function() {
+        const blogId = $(this).data('id');
+        const blogTitle = $(this).data('title');
+        
+        $('#delete-blog-title').text(blogTitle);
+        $('#delete-blog-form').attr('action', '{% url "admin_dashboard:delete_blog" 0 %}'.replace('0', blogId));
+        
+        $('#deleteBlogModal').modal('show');
+    });
+
+    // Toggle blog status
+    $('.toggle-blog').on('click', function() {
+        const blogId = $(this).data('id');
+        const action = $(this).data('action');
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:toggle_blog_status" %}',
+            type: 'POST',
+            data: {
+                'blog_id': blogId,
+                'action': action,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Blog ' + action + 'ed successfully!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error updating blog status', 'error');
+            }
+        });
+    });
+
+    // Bulk actions
+    $('#bulk-action').on('change', function() {
+        const action = $(this).val();
+        if (action) {
+            const selectedBlogs = $('.blog-checkbox:checked');
+            if (selectedBlogs.length === 0) {
+                showNotification('Please select at least one blog post', 'error');
+                return;
+            }
+
+            const blogIds = selectedBlogs.map(function() {
+                return $(this).val();
+            }).get();
+
+            if (action === 'delete') {
+                if (confirm('Are you sure you want to delete selected blog posts?')) {
+                    performBulkAction(action, blogIds);
+                }
+            } else {
+                performBulkAction(action, blogIds);
+            }
+        }
+        $(this).val('');
+    });
+
+    function performBulkAction(action, blogIds) {
+        $.ajax({
+            url: '{% url "admin_dashboard:bulk_blog_action" %}',
+            type: 'POST',
+            data: {
+                'action': action,
+                'blog_ids': blogIds,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error performing bulk action', 'error');
+            }
+        });
+    }
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

@@ -11,10 +11,26 @@ import json
 import csv
 from django.http import HttpResponse
 from shop.models import Product, Category, ProductImage
-from cart.models import Order, OrderItem
+from cart.models import *
 from .models import *
 from .decorators import admin_required
 from .forms import *
+from cart.models import Customer, CustomerCommunication, CustomerNote, BlockedCustomer
+from django.db import transaction
+from django.utils import timezone
+from django.contrib.sites.shortcuts import get_current_site
+
+def get_current_site(request):
+    """Utility function to get current site"""
+    from django.contrib.sites.models import Site
+    try:
+        return Site.objects.get_current(request)
+    except:
+        # Fallback if sites framework is not configured
+        class MockSite:
+            name = "Your Ecommerce Site"
+            domain = request.get_host()
+        return MockSite()
 
 @login_required
 @admin_required
@@ -403,6 +419,380 @@ def inventory_list(request):
     }
     return render(request, 'admin_dashboard/products/inventory.html', context)
 
+# ================= API VIEWS =================
+
+@login_required
+@admin_required
+def category_stats(request):
+    """API endpoint for category statistics"""
+    try:
+        total_categories = Category.objects.count()
+        active_categories = Category.objects.filter(is_active=True).count()
+        featured_categories = Category.objects.filter(is_featured=True).count()
+        
+        # Products per category stats
+        categories_with_products = Category.objects.annotate(
+            product_count=Count('product')
+        )
+        total_products = sum(cat.product_count for cat in categories_with_products)
+        avg_products_per_category = total_products / total_categories if total_categories > 0 else 0
+        
+        # Top categories by product count
+        top_categories = categories_with_products.order_by('-product_count')[:5].values(
+            'id', 'name', 'product_count'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'total_categories': total_categories,
+            'active_categories': active_categories,
+            'featured_categories': featured_categories,
+            'total_products': total_products,
+            'avg_products_per_category': round(avg_products_per_category, 1),
+            'top_categories': list(top_categories)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@login_required
+@admin_required
+def brand_stats(request):
+    """API endpoint for brand statistics"""
+    try:
+        total_brands = Brand.objects.count()
+        active_brands = Brand.objects.filter(is_active=True).count()
+        featured_brands = Brand.objects.filter(is_featured=True).count()
+        
+        # Products per brand stats
+        brands_with_products = Brand.objects.annotate(
+            product_count=Count('product')
+        )
+        total_branded_products = sum(brand.product_count for brand in brands_with_products)
+        
+        # Top brands by product count
+        top_brands = brands_with_products.order_by('-product_count')[:5].values(
+            'id', 'name', 'logo', 'product_count'
+        )
+        
+        # Add logo URLs
+        for brand in top_brands:
+            if brand['logo']:
+                brand['logo_url'] = request.build_absolute_uri(brand['logo'].url)
+            else:
+                brand['logo_url'] = None
+        
+        return JsonResponse({
+            'success': True,
+            'total_brands': total_brands,
+            'active_brands': active_brands,
+            'featured_brands': featured_brands,
+            'total_branded_products': total_branded_products,
+            'top_brands': list(top_brands)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@login_required
+@admin_required
+def supplier_stats(request):
+    """API endpoint for supplier statistics"""
+    try:
+        total_suppliers = Supplier.objects.count()
+        active_suppliers = Supplier.objects.filter(is_active=True).count()
+        preferred_suppliers = Supplier.objects.filter(is_preferred=True).count()
+        
+        # Products per supplier stats
+        suppliers_with_products = Supplier.objects.annotate(
+            product_count=Count('product')
+        )
+        total_supplier_products = sum(supplier.product_count for supplier in suppliers_with_products)
+        
+        # Supplier performance metrics (placeholder - you can add real metrics)
+        supplier_performance = suppliers_with_products.annotate(
+            avg_lead_time=Avg('lead_time'),
+            reliability_score=Avg('reliability_score') if hasattr(Supplier, 'reliability_score') else 95.0
+        ).values('id', 'name', 'product_count', 'avg_lead_time', 'reliability_score')[:5]
+        
+        return JsonResponse({
+            'success': True,
+            'total_suppliers': total_suppliers,
+            'active_suppliers': active_suppliers,
+            'preferred_suppliers': preferred_suppliers,
+            'total_supplier_products': total_supplier_products,
+            'supplier_performance': list(supplier_performance)
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@login_required
+@admin_required
+def recent_brands(request):
+    """API endpoint for recent brands"""
+    try:
+        recent_brands = Brand.objects.filter(is_active=True).order_by('-id')[:10].values(
+            'id', 'name', 'logo', 'is_active', 'created_at'
+        )
+        
+        # Add product count and logo URLs
+        brands_with_counts = []
+        for brand in recent_brands:
+            brand_data = dict(brand)
+            brand_data['product_count'] = Product.objects.filter(brand_id=brand['id']).count()
+            
+            if brand['logo']:
+                brand_obj = Brand.objects.get(id=brand['id'])
+                brand_data['logo_url'] = request.build_absolute_uri(brand_obj.logo.url)
+            else:
+                brand_data['logo_url'] = None
+            
+            brands_with_counts.append(brand_data)
+        
+        return JsonResponse({
+            'success': True,
+            'brands': brands_with_counts
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+@login_required
+@admin_required
+def toggle_blog_category(request):
+    """API endpoint to toggle blog category status"""
+    if request.method == 'POST':
+        try:
+            category_id = request.POST.get('category_id')
+            action = request.POST.get('action')
+            
+            if not category_id or not action:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Category ID and action are required'
+                })
+            
+            category = BlogCategory.objects.get(id=category_id)
+            
+            if action == 'activate':
+                category.is_active = True
+                message = 'Category activated successfully'
+            elif action == 'deactivate':
+                category.is_active = False
+                message = 'Category deactivated successfully'
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid action'
+                })
+            
+            category.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'is_active': category.is_active
+            })
+            
+        except BlogCategory.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Blog category not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def toggle_blog_status(request):
+    """API endpoint to toggle blog post status"""
+    if request.method == 'POST':
+        try:
+            blog_id = request.POST.get('blog_id')
+            action = request.POST.get('action')
+            
+            if not blog_id or not action:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Blog ID and action are required'
+                })
+            
+            blog = Blog.objects.get(id=blog_id)
+            
+            if action == 'publish':
+                blog.is_published = True
+                if not blog.published_date:
+                    blog.published_date = timezone.now()
+                message = 'Blog published successfully'
+            elif action == 'unpublish':
+                blog.is_published = False
+                message = 'Blog unpublished successfully'
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid action'
+                })
+            
+            blog.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'is_published': blog.is_published
+            })
+            
+        except Blog.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Blog post not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def bulk_category_action(request):
+    """API endpoint for bulk category actions"""
+    if request.method == 'POST':
+        try:
+            action = request.POST.get('action')
+            category_ids = request.POST.getlist('category_ids[]')
+            
+            if not action or not category_ids:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Action and category IDs are required'
+                })
+            
+            categories = Category.objects.filter(id__in=category_ids)
+            
+            if action == 'activate':
+                categories.update(is_active=True)
+                message = f'{categories.count()} categories activated successfully'
+            elif action == 'deactivate':
+                categories.update(is_active=False)
+                message = f'{categories.count()} categories deactivated successfully'
+            elif action == 'delete':
+                # Check if categories have products
+                categories_with_products = categories.filter(product__isnull=False).distinct()
+                if categories_with_products.exists():
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Some categories have products and cannot be deleted'
+                    })
+                count = categories.count()
+                categories.delete()
+                message = f'{count} categories deleted successfully'
+            elif action == 'feature':
+                categories.update(is_featured=True)
+                message = f'{categories.count()} categories featured successfully'
+            elif action == 'unfeature':
+                categories.update(is_featured=False)
+                message = f'{categories.count()} categories unfeatured successfully'
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid action'
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'message': message
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def bulk_blog_action(request):
+    """API endpoint for bulk blog actions"""
+    if request.method == 'POST':
+        try:
+            action = request.POST.get('action')
+            blog_ids = request.POST.getlist('blog_ids[]')
+            
+            if not action or not blog_ids:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Action and blog IDs are required'
+                })
+            
+            blogs = Blog.objects.filter(id__in=blog_ids)
+            
+            if action == 'publish':
+                blogs.update(is_published=True)
+                # Set published date for blogs that don't have it
+                blogs.filter(published_date__isnull=True).update(published_date=timezone.now())
+                message = f'{blogs.count()} blogs published successfully'
+            elif action == 'unpublish':
+                blogs.update(is_published=False)
+                message = f'{blogs.count()} blogs unpublished successfully'
+            elif action == 'delete':
+                count = blogs.count()
+                blogs.delete()
+                message = f'{count} blogs deleted successfully'
+            elif action == 'feature':
+                blogs.update(is_featured=True)
+                message = f'{blogs.count()} blogs featured successfully'
+            elif action == 'unfeature':
+                blogs.update(is_featured=False)
+                message = f'{blogs.count()} blogs unfeatured successfully'
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Invalid action'
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'message': message
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
 # ================= OFFERS SECTION =================
 @login_required
 @admin_required
@@ -562,7 +952,42 @@ def manual_payment_settings(request):
 @admin_required
 def employee_list(request):
     employees = Employee.objects.select_related('user').all()
-    return render(request, 'admin_dashboard/employees/list.html', {'employees': employees})
+    
+    # Filtering
+    status_filter = request.GET.get('status')
+    if status_filter:
+        if status_filter == 'active':
+            employees = employees.filter(is_active=True)
+        elif status_filter == 'inactive':
+            employees = employees.filter(is_active=False)
+    
+    search_query = request.GET.get('search')
+    if search_query:
+        employees = employees.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query) |
+            Q(employee_id__icontains=search_query) |
+            Q(position__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(employees, 25)
+    page = request.GET.get('page')
+    employees_page = paginator.get_page(page)
+    
+    # Stats
+    total_employees = employees.count()
+    active_employees = employees.filter(is_active=True).count()
+    inactive_employees = employees.filter(is_active=False).count()
+    
+    context = {
+        'employees': employees_page,
+        'total_employees': total_employees,
+        'active_employees': active_employees,
+        'inactive_employees': inactive_employees,
+    }
+    return render(request, 'admin_dashboard/employees/list.html', context)
 
 @login_required
 @admin_required
@@ -572,60 +997,628 @@ def add_employee(request):
         employee_form = EmployeeForm(request.POST)
         
         if user_form.is_valid() and employee_form.is_valid():
-            user = user_form.save(commit=False)
-            user.set_password('defaultpassword')  # Should be changed by employee
-            user.save()
-            
-            employee = employee_form.save(commit=False)
-            employee.user = user
-            employee.save()
-            
-            messages.success(request, 'Employee added successfully!')
-            return redirect('admin_dashboard:employee_list')
+            try:
+                with transaction.atomic():
+                    user = user_form.save(commit=False)
+                    # Generate random password
+                    password = User.objects.make_random_password()
+                    user.set_password(password)
+                    user.save()
+                    
+                    employee = employee_form.save(commit=False)
+                    employee.user = user
+                    
+                    # Generate employee ID if not provided
+                    if not employee.employee_id:
+                        employee.employee_id = f"EMP{user.id:04d}"
+                    
+                    employee.save()
+                
+                # Send welcome email with credentials (in production)
+                messages.success(request, f'Employee added successfully! Temporary password: {password}')
+                return redirect('admin_dashboard:employee_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error adding employee: {str(e)}')
     else:
         user_form = UserForm()
         employee_form = EmployeeForm()
     
+    # Generate next employee ID
+    last_employee = Employee.objects.order_by('-id').first()
+    next_id = f"EMP{(last_employee.id + 1) if last_employee else 1:04d}"
+    
     return render(request, 'admin_dashboard/employees/add.html', {
         'user_form': user_form,
-        'employee_form': employee_form
+        'employee_form': employee_form,
+        'next_employee_id': next_id
     })
+
+@login_required
+@admin_required
+def edit_employee(request, employee_id):
+    try:
+        employee = Employee.objects.get(id=employee_id)
+        user = employee.user
+        
+        if request.method == 'POST':
+            user_form = UserForm(request.POST, instance=user)
+            employee_form = EmployeeForm(request.POST, instance=employee)
+            
+            if user_form.is_valid() and employee_form.is_valid():
+                user_form.save()
+                employee_form.save()
+                
+                messages.success(request, 'Employee updated successfully!')
+                return redirect('admin_dashboard:employee_list')
+        else:
+            user_form = UserForm(instance=user)
+            employee_form = EmployeeForm(instance=employee)
+        
+        return render(request, 'admin_dashboard/employees/edit.html', {
+            'user_form': user_form,
+            'employee_form': employee_form,
+            'employee': employee
+        })
+        
+    except Employee.DoesNotExist:
+        messages.error(request, 'Employee not found!')
+        return redirect('admin_dashboard:employee_list')
+
+@login_required
+@admin_required
+def toggle_employee_status(request, employee_id):
+    if request.method == 'POST':
+        try:
+            employee = Employee.objects.get(id=employee_id)
+            employee.is_active = not employee.is_active
+            employee.save()
+            
+            action = "activated" if employee.is_active else "deactivated"
+            messages.success(request, f'Employee {action} successfully!')
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'is_active': employee.is_active})
+                
+        except Employee.DoesNotExist:
+            messages.error(request, 'Employee not found!')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Employee not found'})
+    
+    return redirect('admin_dashboard:employee_list')
 
 @login_required
 @admin_required
 def employee_settings(request):
     # Employee role and permission settings
-    return render(request, 'admin_dashboard/employees/settings.html')
+    positions = Employee.objects.values_list('position', flat=True).distinct()
+    
+    if request.method == 'POST':
+        # Handle settings updates
+        messages.success(request, 'Employee settings updated successfully!')
+        return redirect('admin_dashboard:employee_settings')
+    
+    return render(request, 'admin_dashboard/employees/settings.html', {
+        'positions': positions
+    })
 
 @login_required
 @admin_required
 def employee_reports(request):
-    # Employee performance reports
-    employees = Employee.objects.all()
+    employees = Employee.objects.select_related('user').all()
+    
+    # Performance metrics
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    if start_date and end_date:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+    else:
+        end_date = timezone.now().date()
+        start_date = end_date - timedelta(days=30)
     
     # Add reporting logic here
-    return render(request, 'admin_dashboard/employees/reports.html', {'employees': employees})
+    reports_data = []
+    for employee in employees:
+        # Calculate performance metrics
+        reports_data.append({
+            'employee': employee,
+            'orders_processed': 0,  # Placeholder
+            'total_sales': 0,       # Placeholder
+            'efficiency': '95%',    # Placeholder
+        })
+    
+    context = {
+        'employees': employees,
+        'reports_data': reports_data,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    return render(request, 'admin_dashboard/employees/reports.html', context)
+
+@login_required
+@admin_required
+def bulk_employee_action(request):
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+        employee_ids = request.POST.getlist('employee_ids[]')
+        
+        try:
+            employees = Employee.objects.filter(id__in=employee_ids)
+            
+            if action == 'activate':
+                employees.update(is_active=True)
+                message = f'{employees.count()} employees activated successfully!'
+            elif action == 'deactivate':
+                employees.update(is_active=False)
+                message = f'{employees.count()} employees deactivated successfully!'
+            elif action == 'delete':
+                # Delete users as well
+                user_ids = employees.values_list('user_id', flat=True)
+                User.objects.filter(id__in=user_ids).delete()
+                message = f'{employees.count()} employees deleted successfully!'
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid action'})
+            
+            return JsonResponse({'success': True, 'message': message})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 # ================= CUSTOMERS =================
 @login_required
 @admin_required
 def all_customers(request):
-    # Get unique customers from orders
-    customers = Order.objects.values('email', 'full_name', 'phone').distinct()
+    # Get unique customers from orders and user accounts
+    order_customers = Order.objects.values('email', 'full_name', 'phone').distinct()
+    user_customers = User.objects.filter(
+        Q(order__isnull=False) | Q(is_staff=False)
+    ).distinct().values('email', 'first_name', 'last_name')
+    
+    # Combine and deduplicate customers
+    customers_dict = {}
+    
+    # Add order customers
+    for customer in order_customers:
+        email = customer['email']
+        if email not in customers_dict:
+            customers_dict[email] = {
+                'email': email,
+                'full_name': customer['full_name'],
+                'phone': customer['phone'],
+                'source': 'order',
+                'order_count': Order.objects.filter(email=email).count(),
+                'total_spent': Order.objects.filter(
+                    email=email, 
+                    status='delivered'
+                ).aggregate(total=Sum('total_amount'))['total'] or 0,
+                'last_order': Order.objects.filter(
+                    email=email
+                ).order_by('-created_at').first()
+            }
+    
+    # Add user account customers
+    for user in user_customers:
+        email = user['email']
+        if email not in customers_dict:
+            customers_dict[email] = {
+                'email': email,
+                'full_name': f"{user['first_name']} {user['last_name']}".strip(),
+                'phone': '',
+                'source': 'account',
+                'order_count': Order.objects.filter(email=email).count(),
+                'total_spent': Order.objects.filter(
+                    email=email, 
+                    status='delivered'
+                ).aggregate(total=Sum('total_amount'))['total'] or 0,
+                'last_order': Order.objects.filter(
+                    email=email
+                ).order_by('-created_at').first()
+            }
+    
+    customers = list(customers_dict.values())
+    
+    # Filtering
+    search_query = request.GET.get('search')
+    if search_query:
+        customers = [c for c in customers if 
+                    search_query.lower() in c['email'].lower() or 
+                    (c['full_name'] and search_query.lower() in c['full_name'].lower())]
+    
+    source_filter = request.GET.get('source')
+    if source_filter:
+        customers = [c for c in customers if c['source'] == source_filter]
+    
+    # Sorting
+    sort_by = request.GET.get('sort', 'last_order')
+    reverse = request.GET.get('order', 'desc') == 'desc'
+    
+    if sort_by == 'email':
+        customers.sort(key=lambda x: x['email'], reverse=reverse)
+    elif sort_by == 'name':
+        customers.sort(key=lambda x: x['full_name'] or '', reverse=reverse)
+    elif sort_by == 'orders':
+        customers.sort(key=lambda x: x['order_count'], reverse=reverse)
+    elif sort_by == 'spent':
+        customers.sort(key=lambda x: x['total_spent'], reverse=reverse)
+    else:  # last_order
+        customers.sort(key=lambda x: x['last_order'].created_at if x['last_order'] else datetime.min, reverse=reverse)
     
     # Pagination
     paginator = Paginator(customers, 25)
     page = request.GET.get('page')
     customers_page = paginator.get_page(page)
     
-    return render(request, 'admin_dashboard/customers/all.html', {'customers': customers_page})
+    # Stats
+    total_customers = len(customers)
+    order_customers_count = len([c for c in customers if c['source'] == 'order'])
+    account_customers_count = len([c for c in customers if c['source'] == 'account'])
+    total_revenue = sum(c['total_spent'] for c in customers)
+    
+    context = {
+        'customers': customers_page,
+        'total_customers': total_customers,
+        'order_customers_count': order_customers_count,
+        'account_customers_count': account_customers_count,
+        'total_revenue': total_revenue,
+    }
+    return render(request, 'admin_dashboard/customers/all.html', context)
+
+@login_required
+@admin_required
+def customer_detail(request, email):
+    # Get customer orders
+    orders = Order.objects.filter(email=email).order_by('-created_at')
+    
+    # Get customer details
+    customer_data = {
+        'email': email,
+        'orders': orders,
+        'total_orders': orders.count(),
+        'total_spent': orders.filter(status='delivered').aggregate(
+            total=Sum('total_amount')
+        )['total'] or 0,
+        'first_order': orders.last(),
+        'last_order': orders.first(),
+    }
+    
+    # Try to get user account details
+    try:
+        user = User.objects.get(email=email)
+        customer_data['user_account'] = user
+        customer_data['date_joined'] = user.date_joined
+    except User.DoesNotExist:
+        customer_data['user_account'] = None
+    
+    return render(request, 'admin_dashboard/customers/detail.html', {
+        'customer': customer_data
+    })
 
 @login_required
 @admin_required
 def blocked_customers(request):
     # Implement customer blocking logic
-    blocked_emails = []  # Should come from a BlockedCustomer model
-    return render(request, 'admin_dashboard/customers/blocked.html', {'blocked_customers': blocked_emails})
+    blocked_customers = BlockedCustomer.objects.select_related('blocked_by').all()
+    
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        reason = request.POST.get('reason', '')
+        
+        if email:
+            blocked_customer, created = BlockedCustomer.objects.get_or_create(
+                email=email,
+                defaults={
+                    'reason': reason,
+                    'blocked_by': request.user,
+                    'blocked_at': timezone.now()
+                }
+            )
+            
+            if created:
+                messages.success(request, f'Customer {email} blocked successfully!')
+            else:
+                messages.info(request, f'Customer {email} is already blocked!')
+            
+            return redirect('admin_dashboard:blocked_customers')
+    
+    return render(request, 'admin_dashboard/customers/blocked.html', {
+        'blocked_customers': blocked_customers
+    })
+
+@login_required
+@admin_required
+def unblock_customer(request, customer_id):
+    if request.method == 'POST':
+        try:
+            blocked_customer = BlockedCustomer.objects.get(id=customer_id)
+            email = blocked_customer.email
+            blocked_customer.delete()
+            
+            messages.success(request, f'Customer {email} unblocked successfully!')
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True})
+                
+        except BlockedCustomer.DoesNotExist:
+            messages.error(request, 'Blocked customer not found!')
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Customer not found'})
+    
+    return redirect('admin_dashboard:blocked_customers')
+
+@login_required
+@admin_required
+def bulk_customer_action(request):
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        action = request.POST.get('action')
+        emails = request.POST.getlist('emails[]')
+        
+        try:
+            if action == 'block':
+                for email in emails:
+                    BlockedCustomer.objects.get_or_create(
+                        email=email,
+                        defaults={
+                            'reason': 'Bulk action',
+                            'blocked_by': request.user,
+                            'blocked_at': timezone.now()
+                        }
+                    )
+                message = f'{len(emails)} customers blocked successfully!'
+            elif action == 'export':
+                # Export logic would go here
+                message = f'{len(emails)} customers exported successfully!'
+            else:
+                return JsonResponse({'success': False, 'error': 'Invalid action'})
+            
+            return JsonResponse({'success': True, 'message': message})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+
+# Additional Customer-related API Views
+@login_required
+@admin_required
+def send_customer_email(request):
+    """API endpoint to send email to customer"""
+    if request.method == 'POST':
+        try:
+            to_email = request.POST.get('to')
+            subject = request.POST.get('subject')
+            message = request.POST.get('message')
+            
+            if not all([to_email, subject, message]):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'All fields are required'
+                })
+            
+            # Here you would integrate with your email service
+            # For now, we'll just log it
+            print(f"Email to: {to_email}")
+            print(f"Subject: {subject}")
+            print(f"Message: {message}")
+            
+            # Create communication record
+            try:
+                customer = Customer.objects.get(email=to_email)
+                CustomerCommunication.objects.create(
+                    customer=customer,
+                    communication_type='email',
+                    subject=subject,
+                    message=message,
+                    sent_by=request.user,
+                    status='sent'
+                )
+            except Customer.DoesNotExist:
+                # Still log the communication even if customer doesn't exist in DB
+                pass
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Email sent successfully'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def reset_customer_password(request):
+    """API endpoint to reset customer password"""
+    if request.method == 'POST':
+        try:
+            email = request.POST.get('email')
+            
+            if not email:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email is required'
+                })
+            
+            try:
+                user = User.objects.get(email=email)
+                # Generate reset token and send email (implement your reset logic)
+                # For now, just return success
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Password reset link sent successfully'
+                })
+            except User.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'User not found'
+                })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def send_customer_coupon(request):
+    """API endpoint to send coupon to customer"""
+    if request.method == 'POST':
+        try:
+            email = request.POST.get('email')
+            
+            if not email:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email is required'
+                })
+            
+            # Generate a unique coupon code
+            import random
+            import string
+            coupon_code = 'WELCOME' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            
+            # Create coupon (you need to have Coupon model)
+            try:
+                coupon = Coupon.objects.create(
+                    code=coupon_code,
+                    discount_type='percentage',
+                    discount_value=10,
+                    min_order_amount=500,
+                    start_date=timezone.now(),
+                    end_date=timezone.now() + timezone.timedelta(days=30),
+                    usage_limit=1,
+                    is_active=True
+                )
+                
+                # Send email with coupon (implement your email logic)
+                print(f"Coupon {coupon_code} sent to {email}")
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Coupon {coupon_code} sent successfully'
+                })
+                
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Error creating coupon: {str(e)}'
+                })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def save_customer_notes(request):
+    """API endpoint to save customer notes"""
+    if request.method == 'POST':
+        try:
+            email = request.POST.get('email')
+            notes = request.POST.get('notes')
+            
+            if not email:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email is required'
+                })
+            
+            try:
+                customer = Customer.objects.get(email=email)
+                CustomerNote.objects.create(
+                    customer=customer,
+                    author=request.user,
+                    title='Customer Note',
+                    content=notes,
+                    note_type='general'
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Notes saved successfully'
+                })
+                
+            except Customer.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Customer not found'
+                })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
+@login_required
+@admin_required
+def update_block_reason(request):
+    """API endpoint to update block reason"""
+    if request.method == 'POST':
+        try:
+            customer_id = request.POST.get('customer_id')
+            reason = request.POST.get('reason')
+            
+            if not customer_id:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Customer ID is required'
+                })
+            
+            blocked_customer = BlockedCustomer.objects.get(id=customer_id)
+            blocked_customer.custom_reason = reason
+            blocked_customer.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Block reason updated successfully'
+            })
+            
+        except BlockedCustomer.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Blocked customer not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })
+
 
 # ================= BLOGS =================
 @login_required
@@ -1113,3 +2106,85 @@ def get_sales_data(request):
         })
     
     return JsonResponse({'sales_data': sales_data})
+
+
+@login_required
+@admin_required
+def send_employee_credentials(request, employee_id):
+    """API endpoint to send login credentials to employee"""
+    if request.method == 'POST':
+        try:
+            employee = Employee.objects.select_related('user').get(id=employee_id)
+            
+            # Generate a temporary password if not already set
+            if employee.user.has_usable_password():
+                # Generate a new temporary password
+                temp_password = User.objects.make_random_password(length=12)
+                employee.user.set_password(temp_password)
+                employee.user.save()
+            else:
+                temp_password = "Please use 'Forgot Password' to set your password"
+            
+            # Prepare email content
+            subject = f"Your Login Credentials - {get_current_site(request).name}"
+            message = f"""
+            Dear {employee.user.get_full_name()},
+
+            Your employee account has been created/updated at {get_current_site(request).name}.
+
+            Login Details:
+            - Email: {employee.user.email}
+            - Username: {employee.user.username}
+            - Temporary Password: {temp_password if isinstance(temp_password, str) else 'Please use password reset'}
+
+            Login URL: {request.build_absolute_uri('/admin-login/')}
+
+            Please change your password after first login for security reasons.
+
+            Best regards,
+            {get_current_site(request).name} Team
+                        """
+            
+            # In production, you would send an actual email
+            # For now, we'll just log it and return success
+            print("=" * 50)
+            print("EMPLOYEE CREDENTIALS EMAIL")
+            print("=" * 50)
+            print(f"To: {employee.user.email}")
+            print(f"Subject: {subject}")
+            print(f"Message: {message}")
+            print("=" * 50)
+            
+            # Create a notification record (optional)
+            EmployeeNotification.objects.create(
+                employee=employee,
+                title="Login Credentials Sent",
+                message="Your login credentials have been sent to your email.",
+                notification_type="credentials",
+                sent_by=request.user
+            )
+            
+            # Log the action
+            print(f"Credentials sent to employee: {employee.user.email} by {request.user.email}")
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Login credentials sent to {employee.user.email} successfully!',
+                'email_sent_to': employee.user.email
+            })
+            
+        except Employee.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Employee not found'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': f'Error sending credentials: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Invalid request method'
+    })

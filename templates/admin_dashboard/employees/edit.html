@@ -1,0 +1,568 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Edit Employee - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.employee-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    background: #f8f9fa;
+}
+.preview-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 auto 15px;
+}
+.contact-info {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    margin: 10px 0;
+}
+.salary-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #28a745;
+}
+.performance-stats {
+    text-align: center;
+    padding: 15px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Edit Employee</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:employee_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="employeeTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="basic-tab" data-bs-toggle="tab" 
+                                data-bs-target="#basic" type="button" role="tab">
+                            <i class="fas fa-user me-1"></i> Basic Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="employment-tab" data-bs-toggle="tab" 
+                                data-bs-target="#employment" type="button" role="tab">
+                            <i class="fas fa-briefcase me-1"></i> Employment
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="contact-tab" data-bs-toggle="tab" 
+                                data-bs-target="#contact" type="button" role="tab">
+                            <i class="fas fa-address-card me-1"></i> Contact Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="security-tab" data-bs-toggle="tab" 
+                                data-bs-target="#security" type="button" role="tab">
+                            <i class="fas fa-shield-alt me-1"></i> Security
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <form method="post" id="employee-form">
+                    {% csrf_token %}
+                    
+                    <div class="tab-content" id="employeeTabsContent">
+                        <!-- Basic Information Tab -->
+                        <div class="tab-pane fade show active" id="basic" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">First Name *</label>
+                                        {{ user_form.first_name }}
+                                        {% if user_form.first_name.errors %}
+                                        <div class="text-danger small">{{ user_form.first_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Last Name *</label>
+                                        {{ user_form.last_name }}
+                                        {% if user_form.last_name.errors %}
+                                        <div class="text-danger small">{{ user_form.last_name.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Address *</label>
+                                        {{ user_form.email }}
+                                        {% if user_form.email.errors %}
+                                        <div class="text-danger small">{{ user_form.email.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Username *</label>
+                                        {{ user_form.username }}
+                                        {% if user_form.username.errors %}
+                                        <div class="text-danger small">{{ user_form.username.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employment Tab -->
+                        <div class="tab-pane fade" id="employment" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Employee ID</label>
+                                        {{ employee_form.employee_id }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Position *</label>
+                                        {{ employee_form.position }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Salary (৳) *</label>
+                                        {{ employee_form.salary }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Join Date *</label>
+                                        {{ employee_form.join_date }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        {{ employee_form.is_active }}
+                                        <label class="form-check-label">Active Employee</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Department</label>
+                                        {{ employee_form.department }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Tab -->
+                        <div class="tab-pane fade" id="contact" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Phone Number *</label>
+                                        {{ employee_form.phone }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Emergency Contact</label>
+                                        {{ employee_form.emergency_contact }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Address *</label>
+                                {{ employee_form.address }}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">City</label>
+                                        {{ employee_form.city }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Postal Code</label>
+                                        {{ employee_form.postal_code }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Security Tab -->
+                        <div class="tab-pane fade" id="security" role="tabpanel">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Security Settings:</strong> Manage employee access and permissions.
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        <input class="form-check-input" type="checkbox" id="reset-password">
+                                        <label class="form-check-label" for="reset-password">
+                                            Reset Password
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">New Password</label>
+                                        <input type="password" class="form-control" id="new-password" disabled>
+                                        <small class="form-text text-muted">Leave blank to keep current password</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">User Permissions</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_staff" {% if employee.user.is_staff %}checked{% endif %}>
+                                    <label class="form-check-label">
+                                        Staff Status - Can access admin site
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="is_active" {% if employee.user.is_active %}checked{% endif %}>
+                                    <label class="form-check-label">
+                                        Active - Can login to the system
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Last Login</label>
+                                <input type="text" class="form-control" 
+                                       value="{% if employee.user.last_login %}{{ employee.user.last_login|date:'M d, Y H:i' }}{% else %}Never{% endif %}" 
+                                       readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Update Employee
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo me-2"></i> Reset Changes
+                        </button>
+                        <a href="{% url 'admin_dashboard:employee_list' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Employee Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Employee Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="employee-preview text-center">
+                    <div id="preview-avatar" class="mb-3">
+                        <i class="fas fa-user-circle fa-4x text-muted"></i>
+                    </div>
+                    <h4 id="preview-name" class="mb-2">{{ employee.user.get_full_name }}</h4>
+                    <div class="text-muted mb-3" id="preview-position">{{ employee.position }}</div>
+                    
+                    <div class="contact-info">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Employee ID:</span>
+                            <strong id="preview-employee-id">{{ employee.employee_id }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Email:</span>
+                            <strong id="preview-email">{{ employee.user.email }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Phone:</span>
+                            <strong id="preview-phone">{{ employee.phone }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Salary:</span>
+                            <strong class="salary-display" id="preview-salary">৳{{ employee.salary }}</strong>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <span class="badge {% if employee.is_active %}bg-success{% else %}bg-secondary{% endif %}" id="preview-status">
+                            {{ employee.is_active|yesno:"Active,Inactive" }}
+                        </span>
+                        {% if employee.department %}
+                        <span class="badge bg-primary" id="preview-department">{{ employee.department }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Performance Stats</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="performance-stats">
+                            <h3 class="text-primary mb-1">0</h3>
+                            <small class="text-muted">Orders Processed</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="performance-stats">
+                            <h3 class="text-success mb-1">৳0</h3>
+                            <small class="text-muted">Total Sales</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="performance-stats">
+                            <h3 class="text-info mb-1">95%</h3>
+                            <small class="text-muted">Efficiency</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="performance-stats">
+                            <h3 class="text-warning mb-1">4.8</h3>
+                            <small class="text-muted">Rating</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info" id="send-credentials">
+                        <i class="fas fa-envelope me-1"></i> Send Login Credentials
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" id="generate-password">
+                        <i class="fas fa-key me-1"></i> Generate New Password
+                    </button>
+                    {% if employee.is_active %}
+                    <button type="button" class="btn btn-outline-danger toggle-status" data-action="deactivate">
+                        <i class="fas fa-user-slash me-1"></i> Deactivate Employee
+                    </button>
+                    {% else %}
+                    <button type="button" class="btn btn-outline-success toggle-status" data-action="activate">
+                        <i class="fas fa-user-check me-1"></i> Activate Employee
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Real-time preview updates
+    function updatePreview() {
+        const firstName = $('input[name="first_name"]').val() || '';
+        const lastName = $('input[name="last_name"]').val() || '';
+        const fullName = (firstName + ' ' + lastName).trim() || '{{ employee.user.get_full_name }}';
+        
+        $('#preview-name').text(fullName);
+        $('#preview-email').text($('input[name="email"]').val() || '{{ employee.user.email }}');
+        $('#preview-position').text($('select[name="position"]').find('option:selected').text() || '{{ employee.position }}');
+        $('#preview-employee-id').text($('input[name="employee_id"]').val() || '{{ employee.employee_id }}');
+        $('#preview-phone').text($('input[name="phone"]').val() || '{{ employee.phone }}');
+        $('#preview-salary').text('৳' + ($('input[name="salary"]').val() || '{{ employee.salary }}'));
+        $('#preview-department').text($('input[name="department"]').val() || '{{ employee.department }}');
+        
+        // Update status badge
+        const isActive = $('input[name="is_active"]').is(':checked');
+        $('#preview-status').text(isActive ? 'Active' : 'Inactive')
+            .toggleClass('bg-success bg-secondary', isActive);
+    }
+
+    // Password reset toggle
+    $('#reset-password').on('change', function() {
+        $('#new-password').prop('disabled', !this.checked);
+        if (this.checked) {
+            $('#new-password').focus();
+        }
+    });
+
+    // Generate random password
+    $('#generate-password').on('click', function() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 12; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        $('#new-password').val(password);
+        $('#reset-password').prop('checked', true);
+        $('#new-password').prop('disabled', false);
+        showNotification('New password generated!', 'success');
+    });
+
+    // Send credentials
+    $('#send-credentials').on('click', function() {
+        if (confirm('Send login credentials to this employee?')) {
+            $.ajax({
+                url: '{% url "admin_dashboard:send_employee_credentials" employee.id %}',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Credentials sent successfully!', 'success');
+                    } else {
+                        showNotification('Error: ' + response.error, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error sending credentials', 'error');
+                }
+            });
+        }
+    });
+
+    // Toggle employee status
+    $('.toggle-status').on('click', function() {
+        const action = $(this).data('action');
+        const confirmMessage = action === 'activate' ? 
+            'Activate this employee?' : 'Deactivate this employee?';
+        
+        if (confirm(confirmMessage)) {
+            $.ajax({
+                url: '{% url "admin_dashboard:toggle_employee_status" employee.id %}',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Employee ' + action + 'd successfully!', 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification('Error: ' + response.error, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error updating employee status', 'error');
+                }
+            });
+        }
+    });
+
+    // Form validation
+    $('#employee-form').on('submit', function(e) {
+        let valid = true;
+        const errors = [];
+        
+        if (!$('input[name="first_name"]').val()) {
+            errors.push('First name is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="last_name"]').val()) {
+            errors.push('Last name is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="email"]').val()) {
+            errors.push('Email address is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="username"]').val()) {
+            errors.push('Username is required');
+            valid = false;
+        }
+        
+        if (!$('select[name="position"]').val()) {
+            errors.push('Position is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="salary"]').val() || parseFloat($('input[name="salary"]').val()) <= 0) {
+            errors.push('Valid salary is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="join_date"]').val()) {
+            errors.push('Join date is required');
+            valid = false;
+        }
+        
+        if (!$('input[name="phone"]').val()) {
+            errors.push('Phone number is required');
+            valid = false;
+        }
+        
+        if (!$('textarea[name="address"]').val()) {
+            errors.push('Address is required');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            showNotification(errors.join('<br>'), 'error');
+        }
+    });
+
+    // Update preview on all changes
+    $('input, select, textarea').on('input change', updatePreview);
+
+    // Initialize preview
+    updatePreview();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

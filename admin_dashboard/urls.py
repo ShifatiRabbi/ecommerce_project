@@ -43,15 +43,27 @@ urlpatterns = [
     path('payment/bkash/', views.bkash_settings, name='bkash_online'),
     path('payment/manual/', views.manual_payment_settings, name='manual_payment'),
     
-    # Employees
+    # Employee URLs
     path('employees/add/', views.add_employee, name='add_employee'),
     path('employees/list/', views.employee_list, name='employee_list'),
+    path('employees/edit/<int:employee_id>/', views.edit_employee, name='edit_employee'),
     path('employees/settings/', views.employee_settings, name='employee_settings'),
     path('employees/reports/', views.employee_reports, name='employee_reports'),
-    
-    # Customers
+    path('employees/toggle-status/<int:employee_id>/', views.toggle_employee_status, name='toggle_employee_status'),
+    path('employees/bulk-action/', views.bulk_employee_action, name='bulk_employee_action'),
+    # path('employees/send-credentials/<int:employee_id>/', views.send_employee_credentials, name='send_employee_credentials'),
+
+    # Customer URLs
     path('customers/all/', views.all_customers, name='all_customers'),
     path('customers/blocked/', views.blocked_customers, name='blocked_customers'),
+    path('customers/detail/<str:email>/', views.customer_detail, name='customer_detail'),
+    path('customers/unblock/<int:customer_id>/', views.unblock_customer, name='unblock_customer'),
+    path('customers/bulk-action/', views.bulk_customer_action, name='bulk_customer_action'),
+    path('customers/send-email/', views.send_customer_email, name='send_customer_email'),
+    path('customers/reset-password/', views.reset_customer_password, name='reset_customer_password'),
+    path('customers/send-coupon/', views.send_customer_coupon, name='send_customer_coupon'),
+    path('customers/save-notes/', views.save_customer_notes, name='save_customer_notes'),
+    path('customers/update-block-reason/', views.update_block_reason, name='update_block_reason'),
     
     # Blogs
     path('blogs/categories/', views.blog_categories, name='all_blog_categories'),
@@ -106,4 +118,14 @@ urlpatterns = [
     path('ajax/update-inventory/', views.update_inventory, name='update_inventory'),
     path('ajax/get-order-stats/', views.get_order_stats, name='get_order_stats'),
     path('ajax/get-sales-data/', views.get_sales_data, name='get_sales_data'),
+
+    # Additional API endpoints for AJAX
+    path('api/category-stats/', views.category_stats, name='category_stats'),
+    path('api/brand-stats/', views.brand_stats, name='brand_stats'),
+    path('api/supplier-stats/', views.supplier_stats, name='supplier_stats'),
+    path('api/recent-brands/', views.recent_brands, name='recent_brands'),
+    path('api/toggle-blog-category/', views.toggle_blog_category, name='toggle_blog_category'),
+    path('api/toggle-blog-status/', views.toggle_blog_status, name='toggle_blog_status'),
+    path('api/bulk-category-action/', views.bulk_category_action, name='bulk_category_action'),
+    path('api/bulk-blog-action/', views.bulk_blog_action, name='bulk_blog_action'),
 ]

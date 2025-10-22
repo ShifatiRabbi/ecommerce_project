@@ -1,0 +1,369 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Add Supplier - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.supplier-card {
+    border-left: 4px solid #007bff;
+}
+.contact-info {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+}
+.status-badge {
+    font-size: 0.8em;
+}
+.supplier-stats {
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add New Supplier</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:supplier_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Suppliers
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Supplier Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="supplier-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Supplier Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Contact Person *</label>
+                                {{ form.contact_person }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Email Address *</label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                <div class="text-danger small">{{ form.email.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number *</label>
+                                {{ form.phone }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Address *</label>
+                        {{ form.address }}
+                        <small class="form-text text-muted">Full physical address of the supplier</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Website</label>
+                                {{ form.website }}
+                                <small class="form-text text-muted">Supplier's website (optional)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tax ID</label>
+                                {{ form.tax_id }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Payment Terms</label>
+                                {{ form.payment_terms }}
+                                <small class="form-text text-muted">e.g., Net 30, Net 60</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Lead Time (Days)</label>
+                                {{ form.lead_time }}
+                                <small class="form-text text-muted">Average delivery time in days</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_active }}
+                                <label class="form-check-label">Active Supplier</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_preferred }}
+                                <label class="form-check-label">Preferred Supplier</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        {{ form.notes }}
+                        <small class="form-text text-muted">Additional information about the supplier</small>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Save Supplier
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo me-2"></i> Reset
+                        </button>
+                        <a href="{% url 'admin_dashboard:supplier_list' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Supplier Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Supplier Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="supplier-card card">
+                    <div class="card-body">
+                        <h4 id="preview-name" class="card-title">Supplier Name</h4>
+                        <div class="contact-info mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-user me-2 text-primary"></i>
+                                <span id="preview-contact">Contact Person</span>
+                            </div>
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="fas fa-envelope me-2 text-primary"></i>
+                                <span id="preview-email">email@example.com</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-phone me-2 text-primary"></i>
+                                <span id="preview-phone">+880 XXXXXXXX</span>
+                            </div>
+                        </div>
+                        <p id="preview-address" class="text-muted small">Address will appear here</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="badge bg-success status-badge" id="preview-status">Active</div>
+                            <div class="badge bg-warning status-badge d-none" id="preview-preferred">Preferred</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Supplier Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="supplier-stats bg-light">
+                            <h3 class="text-primary mb-1" id="total-suppliers">0</h3>
+                            <small class="text-muted">Total Suppliers</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="supplier-stats bg-light">
+                            <h3 class="text-success mb-1" id="active-suppliers">0</h3>
+                            <small class="text-muted">Active</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="supplier-stats bg-light">
+                            <h3 class="text-info mb-1" id="preferred-suppliers">0</h3>
+                            <small class="text-muted">Preferred</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="supplier-stats bg-light">
+                            <h3 class="text-warning mb-1" id="supplier-products">0</h3>
+                            <small class="text-muted">Products</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary" id="duplicate-supplier">
+                        <i class="fas fa-copy me-2"></i>Duplicate Existing
+                    </button>
+                    <button type="button" class="btn btn-outline-success" id="import-suppliers">
+                        <i class="fas fa-file-import me-2"></i>Import from CSV
+                    </button>
+                    <a href="#" class="btn btn-outline-info">
+                        <i class="fas fa-file-contract me-2"></i>Supplier Agreement
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Real-time preview updates
+    $('input[name="name"]').on('input', function() {
+        $('#preview-name').text($(this).val() || 'Supplier Name');
+    });
+
+    $('input[name="contact_person"]').on('input', function() {
+        $('#preview-contact').text($(this).val() || 'Contact Person');
+    });
+
+    $('input[name="email"]').on('input', function() {
+        $('#preview-email').text($(this).val() || 'email@example.com');
+    });
+
+    $('input[name="phone"]').on('input', function() {
+        $('#preview-phone').text($(this).val() || '+880 XXXXXXXX');
+    });
+
+    $('textarea[name="address"]').on('input', function() {
+        $('#preview-address').text($(this).val() || 'Address will appear here');
+    });
+
+    $('input[name="is_active"]').on('change', function() {
+        $('#preview-status').text(this.checked ? 'Active' : 'Inactive')
+            .toggleClass('bg-success bg-secondary', this.checked);
+    });
+
+    $('input[name="is_preferred"]').on('change', function() {
+        $('#preview-preferred').toggleClass('d-none', !this.checked);
+    });
+
+    // Load supplier stats
+    function loadSupplierStats() {
+        $.ajax({
+            url: '{% url "admin_dashboard:supplier_stats" %}',
+            type: 'GET',
+            success: function(data) {
+                $('#total-suppliers').text(data.total_suppliers);
+                $('#active-suppliers').text(data.active_suppliers);
+                $('#preferred-suppliers').text(data.preferred_suppliers);
+                $('#supplier-products').text(data.total_products);
+            }
+        });
+    }
+
+    // Form validation
+    $('#supplier-form').on('submit', function(e) {
+        let valid = true;
+        
+        if (!$('input[name="name"]').val()) {
+            showNotification('Supplier name is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('input[name="contact_person"]').val()) {
+            showNotification('Contact person is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('input[name="email"]').val()) {
+            showNotification('Email address is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('input[name="phone"]').val()) {
+            showNotification('Phone number is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('textarea[name="address"]').val()) {
+            showNotification('Address is required', 'error');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+
+    // Email validation
+    $('input[name="email"]').on('blur', function() {
+        const email = $(this).val();
+        if (email && !isValidEmail(email)) {
+            showNotification('Please enter a valid email address', 'error');
+            $(this).focus();
+        }
+    });
+
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    // Initialize
+    loadSupplierStats();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

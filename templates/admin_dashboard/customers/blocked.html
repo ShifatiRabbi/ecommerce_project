@@ -1,0 +1,461 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Blocked Customers - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.blocked-customer-card {
+    border-left: 4px solid #dc3545;
+    transition: all 0.3s ease;
+}
+.blocked-customer-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.customer-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.block-reason {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 0.9em;
+}
+.action-buttons .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    margin: 1px;
+}
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Blocked Customers</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:all_customers' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Customers
+        </a>
+    </div>
+</div>
+
+<!-- Add Blocked Customer -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Block New Customer</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="block-customer-form">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" name="email" placeholder="customer@example.com" required>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Reason for Blocking</label>
+                            <input type="text" class="form-control" name="reason" placeholder="Enter reason for blocking...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-danger w-100">
+                                <i class="fas fa-ban me-1"></i> Block Customer
+                            </button>
+                        </div>
+                    </div>
+                    <small class="form-text text-muted">
+                        Blocked customers will not be able to place new orders or create accounts.
+                    </small>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Blocked Customers List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-0">
+                            Blocked Customers 
+                            <span class="badge bg-danger ms-2">{{ blocked_customers.count }}</span>
+                        </h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Search blocked customers..." id="search-blocked">
+                            <button class="btn btn-outline-secondary" type="button" id="clear-search">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if blocked_customers %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="blocked-customers-table">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Blocked By</th>
+                                <th>Blocked At</th>
+                                <th>Reason</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for blocked_customer in blocked_customers %}
+                            <tr data-customer-email="{{ blocked_customer.email }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="customer-avatar bg-light rounded-circle d-flex align-items-center justify-content-center me-3">
+                                            <i class="fas fa-user-slash text-muted"></i>
+                                        </div>
+                                        <div>
+                                            <strong class="d-block">{{ blocked_customer.email }}</strong>
+                                            <small class="text-muted">Blocked Customer</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <small>
+                                        {{ blocked_customer.blocked_by.get_full_name }}<br>
+                                        <span class="text-muted">{{ blocked_customer.blocked_by.email }}</span>
+                                    </small>
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ blocked_customer.blocked_at|date:"M d, Y" }}<br>
+                                        {{ blocked_customer.blocked_at|date:"H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if blocked_customer.reason %}
+                                    <div class="block-reason">
+                                        {{ blocked_customer.reason }}
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">No reason provided</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-success unblock-customer" 
+                                                data-id="{{ blocked_customer.id }}" data-email="{{ blocked_customer.email }}"
+                                                title="Unblock Customer">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info view-details" 
+                                                data-email="{{ blocked_customer.email }}" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning edit-reason" 
+                                                data-id="{{ blocked_customer.id }}" data-reason="{{ blocked_customer.reason }}"
+                                                title="Edit Reason">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-user-check fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Blocked Customers</h4>
+                    <p class="text-muted">There are currently no blocked customers.</p>
+                    <p class="text-muted">Use the form above to block a customer if needed.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+{% if blocked_customers %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Bulk Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <select class="form-select" id="bulk-action">
+                            <option value="">Choose Action...</option>
+                            <option value="unblock">Unblock Selected</option>
+                            <option value="export">Export Selected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <button class="btn btn-primary" id="apply-bulk-action">
+                            <i class="fas fa-play me-1"></i> Apply Action
+                        </button>
+                        <button class="btn btn-outline-secondary" id="select-all">
+                            <i class="fas fa-check-square me-1"></i> Select All
+                        </button>
+                        <button class="btn btn-outline-secondary" id="deselect-all">
+                            <i class="fas fa-square me-1"></i> Deselect All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Edit Reason Modal -->
+<div class="modal fade" id="editReasonModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Block Reason</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-reason-form">
+                    {% csrf_token %}
+                    <input type="hidden" id="edit-customer-id">
+                    <div class="mb-3">
+                        <label class="form-label">Reason for Blocking</label>
+                        <textarea class="form-control" id="edit-reason-text" rows="4" placeholder="Enter reason for blocking..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-reason">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unblock Confirmation Modal -->
+<div class="modal fade" id="unblockConfirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Unblock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unblock <strong id="unblock-customer-email"></strong>?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    This customer will be able to place new orders and create accounts again.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirm-unblock">Unblock Customer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#search-blocked').on('input', function() {
+        const searchText = $(this).val().toLowerCase();
+        $('#blocked-customers-table tbody tr').each(function() {
+            const customerEmail = $(this).data('customer-email').toLowerCase();
+            const isVisible = customerEmail.includes(searchText);
+            $(this).toggle(isVisible);
+        });
+    });
+
+    // Clear search
+    $('#clear-search').on('click', function() {
+        $('#search-blocked').val('').trigger('input');
+    });
+
+    // Unblock customer
+    $('.unblock-customer').on('click', function() {
+        const customerId = $(this).data('id');
+        const customerEmail = $(this).data('email');
+        
+        $('#unblock-customer-email').text(customerEmail);
+        $('#confirm-unblock').data('customer-id', customerId);
+        $('#unblockConfirmModal').modal('show');
+    });
+
+    // Confirm unblock
+    $('#confirm-unblock').on('click', function() {
+        const customerId = $(this).data('customer-id');
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:unblock_customer" 0 %}'.replace('0', customerId),
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Customer unblocked successfully!', 'success');
+                    $('#unblockConfirmModal').modal('hide');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error unblocking customer', 'error');
+            }
+        });
+    });
+
+    // Edit reason
+    $('.edit-reason').on('click', function() {
+        const customerId = $(this).data('id');
+        const currentReason = $(this).data('reason') || '';
+        
+        $('#edit-customer-id').val(customerId);
+        $('#edit-reason-text').val(currentReason);
+        $('#editReasonModal').modal('show');
+    });
+
+    // Save reason
+    $('#save-reason').on('click', function() {
+        const customerId = $('#edit-customer-id').val();
+        const newReason = $('#edit-reason-text').val();
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:update_block_reason" %}',
+            type: 'POST',
+            data: {
+                'customer_id': customerId,
+                'reason': newReason,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Block reason updated successfully!', 'success');
+                    $('#editReasonModal').modal('hide');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error updating block reason', 'error');
+            }
+        });
+    });
+
+    // View details
+    $('.view-details').on('click', function() {
+        const email = $(this).data('email');
+        window.location.href = '{% url "admin_dashboard:customer_detail" "email" %}'.replace('email', email);
+    });
+
+    // Bulk actions
+    $('#apply-bulk-action').on('click', function() {
+        const action = $('#bulk-action').val();
+        const selectedCustomers = $('.customer-checkbox:checked');
+        
+        if (!action) {
+            showNotification('Please select an action', 'error');
+            return;
+        }
+        
+        if (selectedCustomers.length === 0) {
+            showNotification('Please select at least one customer', 'error');
+            return;
+        }
+
+        const customerIds = selectedCustomers.map(function() {
+            return $(this).val();
+        }).get();
+
+        if (action === 'unblock') {
+            if (confirm('Unblock selected customers?')) {
+                performBulkAction(action, customerIds);
+            }
+        } else {
+            performBulkAction(action, customerIds);
+        }
+    });
+
+    function performBulkAction(action, customerIds) {
+        $.ajax({
+            url: '{% url "admin_dashboard:bulk_customer_action" %}',
+            type: 'POST',
+            data: {
+                'action': action,
+                'customer_ids': customerIds,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showNotification('Error: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification('Error performing bulk action', 'error');
+            }
+        });
+    }
+
+    // Select all functionality
+    $('#select-all').on('click', function() {
+        $('.customer-checkbox').prop('checked', true);
+    });
+
+    $('#deselect-all').on('click', function() {
+        $('.customer-checkbox').prop('checked', false);
+    });
+
+    // Form validation for blocking
+    $('#block-customer-form').on('submit', function(e) {
+        const email = $('input[name="email"]').val();
+        if (!email) {
+            e.preventDefault();
+            showNotification('Email address is required', 'error');
+        }
+    });
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

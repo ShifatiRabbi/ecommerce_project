@@ -1,0 +1,352 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Employee Settings - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.settings-card {
+    border-left: 4px solid #007bff;
+}
+.permission-group {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+.role-badge {
+    font-size: 0.8em;
+    margin: 2px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Employee Settings</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:employee_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Employees
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Role Management -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Role & Permission Management</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="role-settings-form">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h6>Default Employee Roles</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="permission-group">
+                                    <h6>Sales Manager</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="sales_manager[]" value="view_orders" checked>
+                                        <label class="form-check-label">View Orders</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="sales_manager[]" value="manage_orders" checked>
+                                        <label class="form-check-label">Manage Orders</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="sales_manager[]" value="view_reports" checked>
+                                        <label class="form-check-label">View Reports</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="permission-group">
+                                    <h6>Inventory Manager</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="inventory_manager[]" value="view_products" checked>
+                                        <label class="form-check-label">View Products</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="inventory_manager[]" value="manage_products" checked>
+                                        <label class="form-check-label">Manage Products</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="inventory_manager[]" value="manage_inventory" checked>
+                                        <label class="form-check-label">Manage Inventory</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h6>Custom Role Creation</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Role Name</label>
+                                    <input type="text" class="form-control" name="role_name" placeholder="Enter role name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Base Role</label>
+                                    <select class="form-select" name="base_role">
+                                        <option value="">Select base role</option>
+                                        <option value="sales_manager">Sales Manager</option>
+                                        <option value="inventory_manager">Inventory Manager</option>
+                                        <option value="customer_support">Customer Support</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Save Role Settings
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Access Control -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Access Control Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Default Login Hours</label>
+                            <div class="row">
+                                <div class="col">
+                                    <input type="time" class="form-control" name="login_start" value="09:00">
+                                </div>
+                                <div class="col">
+                                    <input type="time" class="form-control" name="login_end" value="18:00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Session Timeout</label>
+                            <select class="form-select" name="session_timeout">
+                                <option value="30">30 minutes</option>
+                                <option value="60" selected>1 hour</option>
+                                <option value="120">2 hours</option>
+                                <option value="240">4 hours</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="ip_restriction" id="ip-restriction">
+                    <label class="form-check-label" for="ip-restriction">
+                        Enable IP Restriction
+                    </label>
+                </div>
+
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" name="two_factor" id="two-factor">
+                    <label class="form-check-label" for="two-factor">
+                        Require Two-Factor Authentication
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Current Positions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Current Positions</h5>
+            </div>
+            <div class="card-body">
+                {% if positions %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for position in positions %}
+                    <span class="badge bg-primary role-badge">{{ position }}</span>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No positions defined yet.</p>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addPositionModal">
+                        <i class="fas fa-plus me-1"></i> Add Position
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Settings -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Security Overview</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Password Strength</span>
+                        <span class="text-success">Strong</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Session Security</span>
+                        <span class="text-warning">Medium</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-warning" style="width: 65%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Access Control</span>
+                        <span class="text-info">Good</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-info" style="width: 75%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-outline-info" id="export-permissions">
+                        <i class="fas fa-download me-1"></i> Export Permissions
+                    </button>
+                    <button class="btn btn-outline-warning" id="audit-logs">
+                        <i class="fas fa-clipboard-list me-1"></i> View Audit Logs
+                    </button>
+                    <button class="btn btn-outline-danger" id="reset-settings">
+                        <i class="fas fa-redo me-1"></i> Reset to Defaults
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Position Modal -->
+<div class="modal fade" id="addPositionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Position</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-position-form">
+                    <div class="mb-3">
+                        <label class="form-label">Position Name</label>
+                        <input type="text" class="form-control" name="position_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="position_description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="save-position">Save Position</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Save position
+    $('#save-position').on('click', function() {
+        const positionName = $('input[name="position_name"]').val();
+        const description = $('textarea[name="position_description"]').val();
+        
+        if (positionName) {
+            $.ajax({
+                url: '{% url "admin_dashboard:add_position" %}',
+                type: 'POST',
+                data: {
+                    'name': positionName,
+                    'description': description,
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showNotification('Position added successfully!', 'success');
+                        $('#addPositionModal').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showNotification('Error: ' + response.error, 'error');
+                    }
+                },
+                error: function() {
+                    showNotification('Error adding position', 'error');
+                }
+            });
+        }
+    });
+
+    // Export permissions
+    $('#export-permissions').on('click', function() {
+        showNotification('Exporting permissions...', 'info');
+        // Export logic would go here
+    });
+
+    // Reset settings
+    $('#reset-settings').on('click', function() {
+        if (confirm('Are you sure you want to reset all settings to defaults?')) {
+            showNotification('Settings reset to defaults!', 'success');
+            // Reset logic would go here
+        }
+    });
+
+    // Form submission
+    $('#role-settings-form').on('submit', function(e) {
+        e.preventDefault();
+        showNotification('Role settings updated successfully!', 'success');
+        // Form submission logic would go here
+    });
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}

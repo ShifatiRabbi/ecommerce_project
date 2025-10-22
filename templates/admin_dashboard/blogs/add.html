@@ -1,0 +1,542 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Add Blog Post - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.editor-toolbar {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    padding: 10px;
+    border-radius: 5px 5px 0 0;
+}
+.editor-content {
+    border: 1px solid #dee2e6;
+    border-radius: 0 0 5px 5px;
+    min-height: 300px;
+    padding: 15px;
+}
+.featured-image-preview {
+    max-width: 200px;
+    max-height: 200px;
+    object-fit: cover;
+    border: 2px dashed #dee2e6;
+    padding: 10px;
+}
+.seo-preview {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-top: 10px;
+}
+.url-preview {
+    color: #006621;
+    font-size: 0.9em;
+}
+.description-preview {
+    color: #545454;
+    font-size: 0.8em;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add New Blog Post</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:blog_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Blogs
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="blogTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="content-tab" data-bs-toggle="tab" 
+                                data-bs-target="#content" type="button" role="tab">
+                            <i class="fas fa-edit me-1"></i> Content
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab" 
+                                data-bs-target="#seo" type="button" role="tab">
+                            <i class="fas fa-search me-1"></i> SEO
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" 
+                                data-bs-target="#settings" type="button" role="tab">
+                            <i class="fas fa-cog me-1"></i> Settings
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="blog-form">
+                    {% csrf_token %}
+                    
+                    <div class="tab-content" id="blogTabsContent">
+                        <!-- Content Tab -->
+                        <div class="tab-pane fade show active" id="content" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label">Blog Title *</label>
+                                {{ form.title }}
+                                {% if form.title.errors %}
+                                <div class="text-danger small">{{ form.title.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Slug *</label>
+                                <div class="input-group">
+                                    {{ form.slug }}
+                                    <button class="btn btn-outline-secondary" type="button" id="generate-slug">
+                                        <i class="fas fa-magic"></i>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">URL-friendly version of the title</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Category *</label>
+                                        {{ form.category }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Featured Image *</label>
+                                        <input type="file" class="form-control" name="featured_image" 
+                                               accept="image/*" id="featured-image" required>
+                                        <div class="mt-2" id="featured-image-preview"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Excerpt</label>
+                                {{ form.excerpt }}
+                                <small class="form-text text-muted">Brief summary of the blog post</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Content *</label>
+                                {{ form.content }}
+                                {% if form.content.errors %}
+                                <div class="text-danger small">{{ form.content.errors }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Tags</label>
+                                {{ form.tags }}
+                                <small class="form-text text-muted">Separate tags with commas</small>
+                            </div>
+                        </div>
+
+                        <!-- SEO Tab -->
+                        <div class="tab-pane fade" id="seo" role="tabpanel">
+                            <div class="mb-3">
+                                <label class="form-label">Meta Title</label>
+                                {{ form.meta_title }}
+                                <small class="form-text text-muted">
+                                    Recommended: 50-60 characters. 
+                                    <span id="meta-title-count">0</span>/60
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Meta Description</label>
+                                {{ form.meta_description }}
+                                <small class="form-text text-muted">
+                                    Recommended: 150-160 characters. 
+                                    <span id="meta-description-count">0</span>/160
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Focus Keywords</label>
+                                {{ form.focus_keywords }}
+                                <small class="form-text text-muted">Separate keywords with commas</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Canonical URL</label>
+                                {{ form.canonical_url }}
+                                <small class="form-text text-muted">Original source URL if this content is republished</small>
+                            </div>
+
+                            <!-- SEO Preview -->
+                            <div class="seo-preview">
+                                <h6>Google Preview:</h6>
+                                <div class="url-preview mb-1" id="seo-url-preview">
+                                    https://yoursite.com/blog/sample-post/
+                                </div>
+                                <h5 class="text-primary mb-1" id="seo-title-preview">
+                                    Blog Post Title - {{ site_settings.site_name }}
+                                </h5>
+                                <p class="description-preview mb-0" id="seo-description-preview">
+                                    Blog post description will appear here in search results...
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Settings Tab -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        {{ form.is_published }}
+                                        <label class="form-check-label">Publish Immediately</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        {{ form.is_featured }}
+                                        <label class="form-check-label">Featured Post</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check form-switch mb-3">
+                                        {{ form.allow_comments }}
+                                        <label class="form-check-label">Allow Comments</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Published Date</label>
+                                        {{ form.published_date }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Author</label>
+                                <input type="text" class="form-control" value="{{ request.user.get_full_name }}" readonly>
+                                <small class="form-text text-muted">You are the author of this post</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" name="action" value="publish" class="btn btn-primary btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i> Publish Now
+                        </button>
+                        <button type="submit" name="action" value="draft" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-save me-2"></i> Save as Draft
+                        </button>
+                        <a href="{% url 'admin_dashboard:blog_list' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Blog Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Blog Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="blog-preview">
+                    <div id="preview-featured-image" class="text-center mb-3">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    <h4 id="preview-title" class="mb-2">Blog Title</h4>
+                    <div class="text-muted small mb-3">
+                        <span id="preview-date">{% now "M d, Y" %}</span> • 
+                        <span id="preview-author">{{ request.user.get_full_name }}</span> • 
+                        <span id="preview-category">Uncategorized</span>
+                    </div>
+                    <p id="preview-excerpt" class="text-muted">
+                        Blog excerpt will appear here...
+                    </p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="badge bg-success" id="preview-status">Draft</span>
+                        <button class="btn btn-sm btn-outline-primary" disabled>Read More</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO Score -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">SEO Score</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="seo-score-circle mb-3">
+                        <div class="progress-circle" data-value="0">
+                            <span class="progress-value">0%</span>
+                        </div>
+                    </div>
+                    <div id="seo-feedback">
+                        <p class="small text-muted">Fill in the blog details to get SEO suggestions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-info btn-sm" id="generate-meta">
+                        <i class="fas fa-magic me-1"></i> Generate Meta Tags
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" id="generate-excerpt">
+                        <i class="fas fa-paragraph me-1"></i> Generate Excerpt
+                    </button>
+                    <button type="button" class="btn btn-outline-warning btn-sm" id="check-seo">
+                        <i class="fas fa-search me-1"></i> Check SEO
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Auto-generate slug
+    function generateSlug() {
+        const title = $('input[name="title"]').val();
+        if (title) {
+            const slug = title.toLowerCase()
+                .replace(/[^a-z0-9 -]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+            $('input[name="slug"]').val(slug);
+            updatePreview();
+        }
+    }
+
+    $('input[name="title"]').on('blur', function() {
+        if (!$('input[name="slug"]').val()) {
+            generateSlug();
+        }
+    });
+
+    $('#generate-slug').on('click', generateSlug);
+
+    // Featured image preview
+    $('#featured-image').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#preview-featured-image').html(
+                    `<img src="${e.target.result}" class="img-fluid rounded featured-image-preview" alt="Featured Image">`
+                );
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Real-time preview updates
+    function updatePreview() {
+        $('#preview-title').text($('input[name="title"]').val() || 'Blog Title');
+        $('#preview-excerpt').text($('textarea[name="excerpt"]').val() || 'Blog excerpt will appear here...');
+        
+        // SEO preview
+        $('#seo-title-preview').text(($('input[name="meta_title"]').val() || $('input[name="title"]').val() || 'Blog Title') + ' - {{ site_settings.site_name }}');
+        $('#seo-description-preview').text($('textarea[name="meta_description"]').val() || $('textarea[name="excerpt"]').val() || 'Blog post description will appear here in search results...');
+        $('#seo-url-preview').text('https://yoursite.com/blog/' + ($('input[name="slug"]').val() || 'sample-post') + '/');
+    }
+
+    // Character counters
+    $('input[name="meta_title"]').on('input', function() {
+        const count = $(this).val().length;
+        $('#meta-title-count').text(count);
+        updatePreview();
+    });
+
+    $('textarea[name="meta_description"]').on('input', function() {
+        const count = $(this).val().length;
+        $('#meta-description-count').text(count);
+        updatePreview();
+    });
+
+    $('input[name="title"]').on('input', updatePreview);
+    $('textarea[name="excerpt"]').on('input', updatePreview);
+    $('input[name="slug"]').on('input', updatePreview);
+    $('input[name="meta_title"]').on('input', updatePreview);
+    $('textarea[name="meta_description"]').on('input', updatePreview);
+
+    // Category update
+    $('select[name="category"]').on('change', function() {
+        const categoryName = $(this).find('option:selected').text();
+        $('#preview-category').text(categoryName || 'Uncategorized');
+    });
+
+    // Generate meta tags
+    $('#generate-meta').on('click', function() {
+        const title = $('input[name="title"]').val();
+        const excerpt = $('textarea[name="excerpt"]').val();
+        
+        if (title) {
+            $('input[name="meta_title"]').val(title + ' - {{ site_settings.site_name }}');
+            $('textarea[name="meta_description"]').val(
+                excerpt || `Read this blog post about ${title}. Learn more and get insights.`
+            );
+            updatePreview();
+            showNotification('Meta tags generated successfully!', 'success');
+        }
+    });
+
+    // Generate excerpt from content
+    $('#generate-excerpt').on('click', function() {
+        const content = $('textarea[name="content"]').val();
+        if (content) {
+            const excerpt = content.substring(0, 150).replace(/<[^>]*>/g, '') + '...';
+            $('textarea[name="excerpt"]').val(excerpt);
+            updatePreview();
+            showNotification('Excerpt generated from content!', 'success');
+        }
+    });
+
+    // SEO score calculation
+    function calculateSEOScore() {
+        let score = 0;
+        const title = $('input[name="title"]').val();
+        const excerpt = $('textarea[name="excerpt"]').val();
+        const content = $('textarea[name="content"]').val();
+        const metaTitle = $('input[name="meta_title"]').val();
+        const metaDescription = $('textarea[name="meta_description"]').val();
+        const featuredImage = $('#featured-image')[0].files[0];
+
+        if (title && title.length > 10) score += 20;
+        if (excerpt && excerpt.length > 50) score += 15;
+        if (content && content.length > 200) score += 25;
+        if (metaTitle && metaTitle.length > 30 && metaTitle.length < 60) score += 20;
+        if (metaDescription && metaDescription.length > 100 && metaDescription.length < 160) score += 15;
+        if (featuredImage) score += 5;
+
+        return score;
+    }
+
+    function updateSEOScore() {
+        const score = calculateSEOScore();
+        $('.progress-value').text(score + '%');
+        $('.progress-circle').attr('data-value', score);
+        
+        let feedback = '';
+        if (score < 50) {
+            feedback = 'Add more content and optimize meta tags for better SEO.';
+        } else if (score < 80) {
+            feedback = 'Good start! Consider adding more detailed content.';
+        } else {
+            feedback = 'Excellent! Your blog post is well-optimized for SEO.';
+        }
+        $('#seo-feedback').html('<p class="small">' + feedback + '</p>');
+    }
+
+    // Update SEO score on changes
+    $('input[name="title"], textarea[name="excerpt"], textarea[name="content"], input[name="meta_title"], textarea[name="meta_description"], #featured-image').on('input change', updateSEOScore);
+
+    // Form validation
+    $('#blog-form').on('submit', function(e) {
+        let valid = true;
+        
+        if (!$('input[name="title"]').val()) {
+            showNotification('Blog title is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('input[name="slug"]').val()) {
+            showNotification('Slug is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('select[name="category"]').val()) {
+            showNotification('Category is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('#featured-image')[0].files[0]) {
+            showNotification('Featured image is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('textarea[name="content"]').val()) {
+            showNotification('Content is required', 'error');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+            $('#content-tab').tab('show');
+        }
+    });
+
+    // Initialize
+    updatePreview();
+    updateSEOScore();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+
+<style>
+.progress-circle {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: conic-gradient(#28a745 0% var(--value), #e9ecef var(--value) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    position: relative;
+}
+.progress-circle::before {
+    content: '';
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    background: white;
+    border-radius: 50%;
+}
+.progress-value {
+    position: relative;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,334 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static crispy_forms_tags %}
+
+{% block title %}Add Brand - Admin Panel{% endblock %}
+
+{% block extra_css %}
+<style>
+.brand-preview {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 30px;
+    margin-top: 20px;
+    background: #f8f9fa;
+    text-align: center;
+}
+.preview-logo {
+    max-width: 150px;
+    max-height: 150px;
+    object-fit: contain;
+    margin: 0 auto 20px;
+}
+.brand-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+.brand-card:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Add New Brand</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'admin_dashboard:brand_list' %}" class="btn btn-sm btn-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Brands
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Brand Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" id="brand-form">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Brand Name *</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Brand Name (Bengali)</label>
+                                {{ form.name_bn }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Brand Logo *</label>
+                        <input type="file" class="form-control" name="logo" accept="image/*" id="brand-logo" required>
+                        <small class="form-text text-muted">Recommended size: 200x100px, PNG format with transparent background</small>
+                        <div class="mt-2" id="logo-preview"></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                        <small class="form-text text-muted">Brief description about the brand</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Website URL</label>
+                        {{ form.website }}
+                        <small class="form-text text-muted">Official brand website (optional)</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_active }}
+                                <label class="form-check-label">Active Brand</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                {{ form.is_featured }}
+                                <label class="form-check-label">Featured Brand</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Display Order</label>
+                                {{ form.display_order }}
+                                <small class="form-text text-muted">Lower numbers display first</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Meta Title</label>
+                                {{ form.meta_title }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Meta Description</label>
+                        {{ form.meta_description }}
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i> Save Brand
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-redo me-2"></i> Reset
+                        </button>
+                        <a href="{% url 'admin_dashboard:brand_list' %}" class="btn btn-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Brand Preview -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">Brand Preview</h5>
+            </div>
+            <div class="card-body">
+                <div class="brand-preview">
+                    <div id="preview-logo-container" class="mb-3">
+                        <i class="fas fa-tag fa-3x text-muted"></i>
+                    </div>
+                    <h3 id="preview-name" class="mb-2">Brand Name</h3>
+                    <p id="preview-description" class="text-muted mb-3">Brand description will appear here</p>
+                    <div class="d-flex justify-content-center gap-2">
+                        <span class="badge bg-success" id="preview-status">Active</span>
+                        <span class="badge bg-warning d-none" id="preview-featured">Featured</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Brand Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="stat-item">
+                            <h3 class="text-primary mb-1" id="total-brands">0</h3>
+                            <small class="text-muted">Total Brands</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="stat-item">
+                            <h3 class="text-success mb-1" id="active-brands">0</h3>
+                            <small class="text-muted">Active</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <h3 class="text-info mb-1" id="featured-brands">0</h3>
+                            <small class="text-muted">Featured</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-item">
+                            <h3 class="text-warning mb-1" id="brand-products">0</h3>
+                            <small class="text-muted">Products</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Brands -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Brands</h5>
+            </div>
+            <div class="card-body">
+                <div id="recent-brands">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-spinner fa-spin"></i> Loading...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Logo preview
+    $('#brand-logo').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#preview-logo-container').html(
+                    `<img src="${e.target.result}" class="preview-logo" alt="Brand Logo Preview">`
+                );
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Real-time preview updates
+    $('input[name="name"]').on('input', function() {
+        $('#preview-name').text($(this).val() || 'Brand Name');
+    });
+
+    $('textarea[name="description"]').on('input', function() {
+        $('#preview-description').text($(this).val() || 'Brand description will appear here');
+    });
+
+    $('input[name="is_active"]').on('change', function() {
+        $('#preview-status').text(this.checked ? 'Active' : 'Inactive')
+            .toggleClass('bg-success bg-secondary', this.checked);
+    });
+
+    $('input[name="is_featured"]').on('change', function() {
+        $('#preview-featured').toggleClass('d-none', !this.checked);
+    });
+
+    // Load brand stats
+    function loadBrandStats() {
+        $.ajax({
+            url: '{% url "admin_dashboard:brand_stats" %}',
+            type: 'GET',
+            success: function(data) {
+                $('#total-brands').text(data.total_brands);
+                $('#active-brands').text(data.active_brands);
+                $('#featured-brands').text(data.featured_brands);
+                $('#brand-products').text(data.total_products);
+            }
+        });
+    }
+
+    // Load recent brands
+    function loadRecentBrands() {
+        $.ajax({
+            url: '{% url "admin_dashboard:recent_brands" %}',
+            type: 'GET',
+            success: function(data) {
+                let html = '';
+                data.brands.forEach(brand => {
+                    html += `
+                    <div class="brand-card card mb-2">
+                        <div class="card-body py-2">
+                            <div class="d-flex align-items-center">
+                                <img src="${brand.logo}" class="rounded me-2" style="width: 30px; height: 30px; object-fit: cover;" alt="${brand.name}">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">${brand.name}</h6>
+                                    <small class="text-muted">${brand.product_count} products</small>
+                                </div>
+                                <span class="badge ${brand.is_active ? 'bg-success' : 'bg-secondary'}">${brand.is_active ? 'Active' : 'Inactive'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                });
+                $('#recent-brands').html(html || '<p class="text-muted text-center">No brands found</p>');
+            }
+        });
+    }
+
+    // Form validation
+    $('#brand-form').on('submit', function(e) {
+        let valid = true;
+        
+        if (!$('input[name="name"]').val()) {
+            showNotification('Brand name is required', 'error');
+            valid = false;
+        }
+        
+        if (!$('#brand-logo')[0].files[0]) {
+            showNotification('Brand logo is required', 'error');
+            valid = false;
+        }
+        
+        if (!valid) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialize
+    loadBrandStats();
+    loadRecentBrands();
+});
+
+function showNotification(message, type = 'info') {
+    const alertClass = type === 'error' ? 'alert-danger' : 
+                      type === 'success' ? 'alert-success' : 'alert-info';
+    
+    const notification = $(`
+        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
+    
+    $('.alert-dismissible').alert('close');
+    $('.messages-container').html(notification);
+    
+    setTimeout(() => notification.alert('close'), 5000);
+}
+</script>
+{% endblock %}
