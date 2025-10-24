@@ -14,11 +14,11 @@ from shop.models import Product, Category, ProductImage
 from cart.models import *
 from .models import *
 from .decorators import admin_required
-from .forms import *
 from cart.models import Customer, CustomerCommunication, CustomerNote, BlockedCustomer
 from django.db import transaction
 from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
+from .forms import *
 
 def get_current_site(request):
     """Utility function to get current site"""

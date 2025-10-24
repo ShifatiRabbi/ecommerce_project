@@ -2,6 +2,7 @@ from django.db import models
 from shop.models import Product
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db import transaction
 
 # Customer Related Models
 class Customer(models.Model):
@@ -172,19 +173,17 @@ class BlockedCustomer(models.Model):
         return self.get_reason_display()
     
     def save(self, *args, **kwargs):
-        # Update customer stats before blocking
         if not self.pk:  # Only on creation
             try:
-                customer = Customer.objects.get(email=self.email)
-                self.previous_orders_count = customer.total_orders
-                self.total_amount_spent = customer.total_spent
-                
-                # Mark customer as blocked
-                customer.is_blocked = True
-                customer.save()
+                with transaction.atomic():
+                    customer = Customer.objects.get(email=self.email)
+                    self.previous_orders_count = customer.total_orders
+                    self.total_amount_spent = customer.total_spent
+
+                    customer.is_blocked = True
+                    customer.save(update_fields=['is_blocked'])
             except Customer.DoesNotExist:
                 pass
-        
         super().save(*args, **kwargs)
 
 class CustomerCommunication(models.Model):

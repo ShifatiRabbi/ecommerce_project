@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from shop.models import Product, Category
 from .models import *
-from cart.models import *
+from cart.models import Customer, CustomerCommunication, CustomerNote, BlockedCustomer
 from django.utils import timezone
 import re
 
@@ -592,3 +592,4 @@ class CustomerSearchForm(forms.Form):
         ('active', 'Active'),
         ('inactive', 'Inactive')
     ], widget=forms.Select(attrs={'class': 'form-select'}))
+

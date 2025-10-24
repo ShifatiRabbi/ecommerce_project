@@ -6,13 +6,21 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     name_bn = models.CharField(max_length=100, blank=True)
     slug = models.SlugField(unique=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
     image = models.ImageField(upload_to='categories/', null=True, blank=True)
+    description = models.TextField(blank=True)
+    description_bn = models.TextField(blank=True)
+    meta_title = models.CharField(max_length=150, blank=True)
+    meta_description = models.CharField(max_length=255, blank=True)
+    is_featured = models.BooleanField(default=False)
+    display_order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name_plural = "Categories"
-    
+        ordering = ['display_order', 'name']
+
     def __str__(self):
         return self.name
     
@@ -31,6 +39,9 @@ class Product(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2)
     compare_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     sku = models.CharField(max_length=100, unique=True)
+    brand = models.CharField(max_length=100, blank=True, null=True)
+    supplier = models.CharField(max_length=100, blank=True, null=True)
+
     is_active = models.BooleanField(default=True)
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

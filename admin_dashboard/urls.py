@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from admin_dashboard import views
 
 app_name = 'admin_dashboard'
 
