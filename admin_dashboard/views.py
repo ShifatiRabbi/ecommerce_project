@@ -1641,6 +1641,12 @@ def add_blog_category(request):
     
     return render(request, 'admin_dashboard/blogs/category_add.html', {'form': form})
 
+def delete_blog_category(request, pk):
+    category = get_object_or_404(BlogCategory, pk=pk)
+    category.delete()
+    messages.success(request, f'Category "{category.name}" was deleted successfully.')
+    return redirect('admin_dashboard:blog_categories')
+
 @login_required
 @admin_required
 def blog_list(request):
@@ -1664,6 +1670,12 @@ def add_blog(request):
         form = BlogForm()
     
     return render(request, 'admin_dashboard/blogs/add.html', {'form': form})
+
+def delete_blog(request, pk):
+    blog = get_object_or_404(Blog, pk=pk)
+    blog.delete()
+    messages.success(request, f'Blog "{blog.title}" was deleted successfully.')
+    return redirect('admin_dashboard:blog_list')
 
 # ================= MARKETING =================
 @login_required

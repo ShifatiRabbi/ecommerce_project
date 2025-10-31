@@ -243,6 +243,7 @@ class Blog(models.Model):
 
     def get_absolute_url(self):
         return reverse('blog:detail', args=[self.slug])
+
 class SEOSettings(models.Model):
     page = models.CharField(max_length=100, unique=True)
     meta_title = models.CharField(max_length=200)

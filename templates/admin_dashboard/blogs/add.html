@@ -47,7 +47,7 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">Add New Blog Post</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <a href="{% url 'admin_dashboard:blog_list' %}" class="btn btn-sm btn-secondary">
+        <a href="{% url 'admin_dashboard:all_blogs' %}" class="btn btn-sm btn-secondary">
             <i class="fas fa-arrow-left me-1"></i> Back to Blogs
         </a>
     </div>
@@ -59,49 +59,53 @@
             <div class="card-header">
                 <ul class="nav nav-tabs card-header-tabs" id="blogTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="content-tab" data-bs-toggle="tab" 
-                                data-bs-target="#content" type="button" role="tab">
+                        <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
                             <i class="fas fa-edit me-1"></i> Content
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab" 
-                                data-bs-target="#seo" type="button" role="tab">
+                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo" type="button" role="tab">
                             <i class="fas fa-search me-1"></i> SEO
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" 
-                                data-bs-target="#settings" type="button" role="tab">
+                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
                             <i class="fas fa-cog me-1"></i> Settings
                         </button>
                     </li>
                 </ul>
             </div>
+
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data" id="blog-form">
                     {% csrf_token %}
-                    
-                    <div class="tab-content" id="blogTabsContent">
-                        <!-- Content Tab -->
-                        <div class="tab-pane fade show active" id="content" role="tabpanel">
-                            <div class="mb-3">
-                                <label class="form-label">Blog Title *</label>
-                                {{ form.title }}
-                                {% if form.title.errors %}
-                                <div class="text-danger small">{{ form.title.errors }}</div>
-                                {% endif %}
-                            </div>
 
-                            <div class="mb-3">
-                                <label class="form-label">Slug *</label>
-                                <div class="input-group">
-                                    {{ form.slug }}
-                                    <button class="btn btn-outline-secondary" type="button" id="generate-slug">
-                                        <i class="fas fa-magic"></i>
-                                    </button>
+                    <div class="tab-content" id="blogTabsContent">
+                        <!-- CONTENT TAB -->
+                        <div class="tab-pane fade show active" id="content" role="tabpanel">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Blog Title *</label>
+                                        {{ form.title }}
+                                        {% if form.title.errors %}
+                                            <div class="text-danger small">{{ form.title.errors }}</div>
+                                        {% endif %}
+                                    </div>
                                 </div>
-                                <small class="form-text text-muted">URL-friendly version of the title</small>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Slug *</label>
+                                        <div class="input-group">
+                                            {{ form.slug }}
+                                            <button class="btn btn-outline-secondary" type="button" id="generate-slug">
+                                                <i class="fas fa-magic"></i>
+                                            </button>
+                                        </div>
+                                        <small class="form-text text-muted">URL-friendly version of the title</small>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="row">
@@ -111,11 +115,11 @@
                                         {{ form.category }}
                                     </div>
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Featured Image *</label>
-                                        <input type="file" class="form-control" name="featured_image" 
-                                               accept="image/*" id="featured-image" required>
+                                        <input type="file" class="form-control" name="featured_image" accept="image/*" id="featured-image" required>
                                         <div class="mt-2" id="featured-image-preview"></div>
                                     </div>
                                 </div>
@@ -131,7 +135,7 @@
                                 <label class="form-label">Content *</label>
                                 {{ form.content }}
                                 {% if form.content.errors %}
-                                <div class="text-danger small">{{ form.content.errors }}</div>
+                                    <div class="text-danger small">{{ form.content.errors }}</div>
                                 {% endif %}
                             </div>
 
@@ -142,13 +146,13 @@
                             </div>
                         </div>
 
-                        <!-- SEO Tab -->
+                        <!-- SEO TAB -->
                         <div class="tab-pane fade" id="seo" role="tabpanel">
                             <div class="mb-3">
                                 <label class="form-label">Meta Title</label>
                                 {{ form.meta_title }}
                                 <small class="form-text text-muted">
-                                    Recommended: 50-60 characters. 
+                                    Recommended: 50–60 characters.
                                     <span id="meta-title-count">0</span>/60
                                 </small>
                             </div>
@@ -157,7 +161,7 @@
                                 <label class="form-label">Meta Description</label>
                                 {{ form.meta_description }}
                                 <small class="form-text text-muted">
-                                    Recommended: 150-160 characters. 
+                                    Recommended: 150–160 characters.
                                     <span id="meta-description-count">0</span>/160
                                 </small>
                             </div>
@@ -174,7 +178,6 @@
                                 <small class="form-text text-muted">Original source URL if this content is republished</small>
                             </div>
 
-                            <!-- SEO Preview -->
                             <div class="seo-preview">
                                 <h6>Google Preview:</h6>
                                 <div class="url-preview mb-1" id="seo-url-preview">
@@ -189,7 +192,7 @@
                             </div>
                         </div>
 
-                        <!-- Settings Tab -->
+                        <!-- SETTINGS TAB -->
                         <div class="tab-pane fade" id="settings" role="tabpanel">
                             <div class="row">
                                 <div class="col-md-6">
@@ -198,6 +201,7 @@
                                         <label class="form-check-label">Publish Immediately</label>
                                     </div>
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="form-check form-switch mb-3">
                                         {{ form.is_featured }}
@@ -213,6 +217,7 @@
                                         <label class="form-check-label">Allow Comments</label>
                                     </div>
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label class="form-label">Published Date</label>
@@ -236,7 +241,7 @@
                         <button type="submit" name="action" value="draft" class="btn btn-outline-secondary btn-lg">
                             <i class="fas fa-save me-2"></i> Save as Draft
                         </button>
-                        <a href="{% url 'admin_dashboard:blog_list' %}" class="btn btn-secondary btn-lg">
+                        <a href="{% url 'admin_dashboard:all_blogs' %}" class="btn btn-secondary btn-lg">
                             Cancel
                         </a>
                     </div>
@@ -245,6 +250,7 @@
         </div>
     </div>
 
+    <!-- RIGHT COLUMN -->
     <div class="col-lg-4">
         <!-- Blog Preview -->
         <div class="card mb-4">
@@ -262,9 +268,7 @@
                         <span id="preview-author">{{ request.user.get_full_name }}</span> • 
                         <span id="preview-category">Uncategorized</span>
                     </div>
-                    <p id="preview-excerpt" class="text-muted">
-                        Blog excerpt will appear here...
-                    </p>
+                    <p id="preview-excerpt" class="text-muted">Blog excerpt will appear here...</p>
                     <div class="d-flex justify-content-between align-items-center">
                         <span class="badge bg-success" id="preview-status">Draft</span>
                         <button class="btn btn-sm btn-outline-primary" disabled>Read More</button>
@@ -278,16 +282,14 @@
             <div class="card-header">
                 <h5 class="mb-0">SEO Score</h5>
             </div>
-            <div class="card-body">
-                <div class="text-center">
-                    <div class="seo-score-circle mb-3">
-                        <div class="progress-circle" data-value="0">
-                            <span class="progress-value">0%</span>
-                        </div>
+            <div class="card-body text-center">
+                <div class="seo-score-circle mb-3">
+                    <div class="progress-circle" data-value="0">
+                        <span class="progress-value">0%</span>
                     </div>
-                    <div id="seo-feedback">
-                        <p class="small text-muted">Fill in the blog details to get SEO suggestions</p>
-                    </div>
+                </div>
+                <div id="seo-feedback">
+                    <p class="small text-muted">Fill in the blog details to get SEO suggestions</p>
                 </div>
             </div>
         </div>
@@ -313,6 +315,7 @@
         </div>
     </div>
 </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -538,5 +541,47 @@ function showNotification(message, type = 'info') {
     font-weight: bold;
     font-size: 1.2em;
 }
+.card-header {
+    padding: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    justify-content: space-between;
+    padding: 0;
+}
+
+.nav-tabs .nav-item {
+    flex: 1;
+    text-align: center;
+}
+.card-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.mt-4 {
+    margin-top: auto;
+}
+.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.col-lg-8, .col-lg-4 {
+    padding: 0.5rem;
+}
+
+@media (max-width: 767px) {
+    .col-lg-8, .col-lg-4 {
+        width: 100%;
+    }
+}
+.tab-content {
+    margin-top: 20px;  /* Add margin-top to separate tabs from content */
+}
+
 </style>
 {% endblock %}

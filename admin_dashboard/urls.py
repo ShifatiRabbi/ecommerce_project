@@ -68,8 +68,10 @@ urlpatterns = [
     # Blogs
     path('blogs/categories/', views.blog_categories, name='all_blog_categories'),
     path('blogs/categories/add/', views.add_blog_category, name='add_blog_category'),
+    path('blogs/categories/delete/<int:pk>/', views.delete_blog_category, name='delete_blog_category'),
     path('blogs/add/', views.add_blog, name='add_blog'),
     path('blogs/list/', views.blog_list, name='all_blogs'),
+    path('blogs/delete/<int:pk>/', views.delete_blog, name='delete_blog'),
     
     # Marketing
     path('marketing/facebook/conversion-api/', views.facebook_conversion_api, name='facebook_conversion_api'),
