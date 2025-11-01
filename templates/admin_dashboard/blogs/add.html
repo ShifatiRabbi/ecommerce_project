@@ -1,45 +1,186 @@
 {% extends 'admin_dashboard/base.html' %}
+
 {% load static crispy_forms_tags %}
 
 {% block title %}Add Blog Post - Admin Panel{% endblock %}
 
 {% block extra_css %}
 <style>
-.editor-toolbar {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-bottom: none;
-    padding: 10px;
-    border-radius: 5px 5px 0 0;
-}
-.editor-content {
-    border: 1px solid #dee2e6;
-    border-radius: 0 0 5px 5px;
-    min-height: 300px;
-    padding: 15px;
-}
-.featured-image-preview {
-    max-width: 200px;
-    max-height: 200px;
-    object-fit: cover;
-    border: 2px dashed #dee2e6;
-    padding: 10px;
-}
-.seo-preview {
-    background: #f8f9fa;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    padding: 15px;
-    margin-top: 10px;
-}
-.url-preview {
-    color: #006621;
-    font-size: 0.9em;
-}
-.description-preview {
-    color: #545454;
-    font-size: 0.8em;
-}
+    .blog-form-section {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+
+    .blog-form-section h3 {
+        color: #495057;
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .blog-form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .blog-form-control {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.75rem;
+        font-size: 1rem;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .blog-form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+
+    .blog-form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+
+    .blog-featured-image-preview {
+        max-width: 300px;
+        max-height: 200px;
+        object-fit: cover;
+        border: 2px dashed #dee2e6;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .blog-image-placeholder {
+        width: 100%;
+        height: 150px;
+        background: #f8f9fa;
+        border: 2px dashed #dee2e6;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+        margin-top: 10px;
+    }
+
+    .blog-seo-preview {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .blog-url-preview {
+        color: #006621;
+        font-size: 0.9em;
+        margin-bottom: 0.5rem;
+    }
+
+    .blog-description-preview {
+        color: #545454;
+        font-size: 0.85em;
+        line-height: 1.4;
+    }
+
+    .blog-progress-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        position: relative;
+    }
+
+    .blog-progress-value {
+        font-weight: bold;
+        font-size: 1rem;
+        color: #495057;
+    }
+
+    .blog-form-actions {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .blog-quick-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .blog-preview-card {
+        background: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .blog-preview-image {
+        width: 100%;
+        height: 200px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .blog-preview-image img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: cover;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .input-group-text {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+    }
+
+    @media (max-width: 768px) {
+        .blog-form-section {
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .blog-quick-actions {
+            flex-direction: column;
+        }
+        
+        .blog-quick-actions .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -55,533 +196,480 @@
 
 <div class="row">
     <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <ul class="nav nav-tabs card-header-tabs" id="blogTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="content-tab" data-bs-toggle="tab" data-bs-target="#content" type="button" role="tab">
-                            <i class="fas fa-edit me-1"></i> Content
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="seo-tab" data-bs-toggle="tab" data-bs-target="#seo" type="button" role="tab">
-                            <i class="fas fa-search me-1"></i> SEO
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="settings-tab" data-bs-toggle="tab" data-bs-target="#settings" type="button" role="tab">
-                            <i class="fas fa-cog me-1"></i> Settings
-                        </button>
-                    </li>
-                </ul>
-            </div>
+        <form method="post" enctype="multipart/form-data" id="blogAddForm">
+            {% csrf_token %}
 
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data" id="blog-form">
-                    {% csrf_token %}
-
-                    <div class="tab-content" id="blogTabsContent">
-                        <!-- CONTENT TAB -->
-                        <div class="tab-pane fade show active" id="content" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Blog Title *</label>
-                                        {{ form.title }}
-                                        {% if form.title.errors %}
-                                            <div class="text-danger small">{{ form.title.errors }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Slug *</label>
-                                        <div class="input-group">
-                                            {{ form.slug }}
-                                            <button class="btn btn-outline-secondary" type="button" id="generate-slug">
-                                                <i class="fas fa-magic"></i>
-                                            </button>
-                                        </div>
-                                        <small class="form-text text-muted">URL-friendly version of the title</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Category *</label>
-                                        {{ form.category }}
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Featured Image *</label>
-                                        <input type="file" class="form-control" name="featured_image" accept="image/*" id="featured-image" required>
-                                        <div class="mt-2" id="featured-image-preview"></div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Excerpt</label>
-                                {{ form.excerpt }}
-                                <small class="form-text text-muted">Brief summary of the blog post</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Content *</label>
-                                {{ form.content }}
-                                {% if form.content.errors %}
-                                    <div class="text-danger small">{{ form.content.errors }}</div>
-                                {% endif %}
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Tags</label>
-                                {{ form.tags }}
-                                <small class="form-text text-muted">Separate tags with commas</small>
-                            </div>
+            <!-- Basic Information Section -->
+            <div class="blog-form-section">
+                <h3><i class="fas fa-info-circle me-2"></i>Basic Information</h3>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="blog-form-label" for="blogTitle">Blog Title *</label>
+                        <input type="text" class="form-control blog-form-control" id="blogTitle" name="title" placeholder="Enter blog title" required>
+                        <small class="blog-form-text">Enter a descriptive title for your blog post</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="blog-form-label" for="blogSlug">Slug *</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control blog-form-control" id="blogSlug" name="slug" placeholder="blog-post-slug" required>
+                            <button type="button" class="btn btn-outline-secondary" id="generateSlugBtn">
+                                <i class="fas fa-magic"></i>
+                            </button>
                         </div>
-
-                        <!-- SEO TAB -->
-                        <div class="tab-pane fade" id="seo" role="tabpanel">
-                            <div class="mb-3">
-                                <label class="form-label">Meta Title</label>
-                                {{ form.meta_title }}
-                                <small class="form-text text-muted">
-                                    Recommended: 50–60 characters.
-                                    <span id="meta-title-count">0</span>/60
-                                </small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Meta Description</label>
-                                {{ form.meta_description }}
-                                <small class="form-text text-muted">
-                                    Recommended: 150–160 characters.
-                                    <span id="meta-description-count">0</span>/160
-                                </small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Focus Keywords</label>
-                                {{ form.focus_keywords }}
-                                <small class="form-text text-muted">Separate keywords with commas</small>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Canonical URL</label>
-                                {{ form.canonical_url }}
-                                <small class="form-text text-muted">Original source URL if this content is republished</small>
-                            </div>
-
-                            <div class="seo-preview">
-                                <h6>Google Preview:</h6>
-                                <div class="url-preview mb-1" id="seo-url-preview">
-                                    https://yoursite.com/blog/sample-post/
-                                </div>
-                                <h5 class="text-primary mb-1" id="seo-title-preview">
-                                    Blog Post Title - {{ site_settings.site_name }}
-                                </h5>
-                                <p class="description-preview mb-0" id="seo-description-preview">
-                                    Blog post description will appear here in search results...
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- SETTINGS TAB -->
-                        <div class="tab-pane fade" id="settings" role="tabpanel">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch mb-3">
-                                        {{ form.is_published }}
-                                        <label class="form-check-label">Publish Immediately</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch mb-3">
-                                        {{ form.is_featured }}
-                                        <label class="form-check-label">Featured Post</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch mb-3">
-                                        {{ form.allow_comments }}
-                                        <label class="form-check-label">Allow Comments</label>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label class="form-label">Published Date</label>
-                                        {{ form.published_date }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Author</label>
-                                <input type="text" class="form-control" value="{{ request.user.get_full_name }}" readonly>
-                                <small class="form-text text-muted">You are the author of this post</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <button type="submit" name="action" value="publish" class="btn btn-primary btn-lg">
-                            <i class="fas fa-paper-plane me-2"></i> Publish Now
-                        </button>
-                        <button type="submit" name="action" value="draft" class="btn btn-outline-secondary btn-lg">
-                            <i class="fas fa-save me-2"></i> Save as Draft
-                        </button>
-                        <a href="{% url 'admin_dashboard:all_blogs' %}" class="btn btn-secondary btn-lg">
-                            Cancel
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- RIGHT COLUMN -->
-    <div class="col-lg-4">
-        <!-- Blog Preview -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">Blog Preview</h5>
-            </div>
-            <div class="card-body">
-                <div class="blog-preview">
-                    <div id="preview-featured-image" class="text-center mb-3">
-                        <i class="fas fa-image fa-3x text-muted"></i>
-                    </div>
-                    <h4 id="preview-title" class="mb-2">Blog Title</h4>
-                    <div class="text-muted small mb-3">
-                        <span id="preview-date">{% now "M d, Y" %}</span> • 
-                        <span id="preview-author">{{ request.user.get_full_name }}</span> • 
-                        <span id="preview-category">Uncategorized</span>
-                    </div>
-                    <p id="preview-excerpt" class="text-muted">Blog excerpt will appear here...</p>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <span class="badge bg-success" id="preview-status">Draft</span>
-                        <button class="btn btn-sm btn-outline-primary" disabled>Read More</button>
+                        <small class="blog-form-text">URL-friendly version of the title</small>
                     </div>
                 </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="blog-form-label" for="blogCategory">Category *</label>
+                        <select class="form-select blog-form-control" id="blogCategory" name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="technology">Technology</option>
+                            <option value="business">Business</option>
+                            <option value="lifestyle">Lifestyle</option>
+                            <option value="health">Health</option>
+                            <option value="education">Education</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="blog-form-label" for="blogFeaturedImage">Featured Image *</label>
+                        <input type="file" class="form-control blog-form-control" id="blogFeaturedImage" name="featured_image" accept="image/*" required>
+                        <div class="blog-image-placeholder" id="imagePlaceholder">
+                            <i class="fas fa-image me-2"></i>Image Preview
+                        </div>
+                        <img id="featuredImagePreview" class="blog-featured-image-preview" alt="Featured image preview">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogExcerpt">Excerpt</label>
+                    <textarea class="form-control blog-form-control" id="blogExcerpt" name="excerpt" rows="3" placeholder="Brief summary of the blog post"></textarea>
+                    <small class="blog-form-text">A short description that will appear in blog listings</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogContent">Content *</label>
+                    <textarea class="form-control blog-form-control" id="blogContent" name="content" rows="12" placeholder="Write your blog content here..." required></textarea>
+                    <small class="blog-form-text">Main content of your blog post</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogTags">Tags</label>
+                    <input type="text" class="form-control blog-form-control" id="blogTags" name="tags" placeholder="technology, blog, web, tutorial">
+                    <small class="blog-form-text">Separate tags with commas</small>
+                </div>
+            </div>
+
+            <!-- SEO Settings Section -->
+            <div class="blog-form-section">
+                <h3><i class="fas fa-search me-2"></i>SEO Settings</h3>
+                
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogMetaTitle">Meta Title</label>
+                    <input type="text" class="form-control blog-form-control" id="blogMetaTitle" name="meta_title" placeholder="Optimized title for search engines">
+                    <small class="blog-form-text">
+                        Recommended: 50–60 characters. 
+                        <span id="metaTitleCount">0</span>/60
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogMetaDescription">Meta Description</label>
+                    <textarea class="form-control blog-form-control" id="blogMetaDescription" name="meta_description" rows="3" placeholder="Brief description for search results"></textarea>
+                    <small class="blog-form-text">
+                        Recommended: 150–160 characters. 
+                        <span id="metaDescriptionCount">0</span>/160
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogFocusKeywords">Focus Keywords</label>
+                    <input type="text" class="form-control blog-form-control" id="blogFocusKeywords" name="focus_keywords" placeholder="keyword1, keyword2, keyword3">
+                    <small class="blog-form-text">Separate keywords with commas</small>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label" for="blogCanonicalUrl">Canonical URL</label>
+                    <input type="url" class="form-control blog-form-control" id="blogCanonicalUrl" name="canonical_url" placeholder="https://example.com/original-post">
+                    <small class="blog-form-text">Original source URL if this content is republished</small>
+                </div>
+
+                <div class="blog-seo-preview">
+                    <h6 class="mb-3">Google Search Preview:</h6>
+                    <div class="blog-url-preview" id="seoUrlPreview">https://yoursite.com/blog/sample-post/</div>
+                    <h5 class="text-primary mb-2" id="seoTitlePreview">Blog Post Title - {{ site_settings.site_name }}</h5>
+                    <p class="blog-description-preview mb-0" id="seoDescriptionPreview">Blog post description will appear here in search results...</p>
+                </div>
+            </div>
+
+            <!-- Publication Settings Section -->
+            <div class="blog-form-section">
+                <h3><i class="fas fa-cog me-2"></i>Publication Settings</h3>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="blogIsPublished" name="is_published">
+                            <label class="form-check-label blog-form-label" for="blogIsPublished">Publish Immediately</label>
+                        </div>
+                        <small class="blog-form-text">Make this post visible to the public</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="blogIsFeatured" name="is_featured">
+                            <label class="form-check-label blog-form-label" for="blogIsFeatured">Featured Post</label>
+                        </div>
+                        <small class="blog-form-text">Highlight this post on the homepage</small>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="blogAllowComments" name="allow_comments" checked>
+                            <label class="form-check-label blog-form-label" for="blogAllowComments">Allow Comments</label>
+                        </div>
+                        <small class="blog-form-text">Enable comments for this post</small>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="blog-form-label" for="blogPublishedDate">Published Date</label>
+                        <input type="datetime-local" class="form-control blog-form-control" id="blogPublishedDate" name="published_date">
+                        <small class="blog-form-text">Schedule publication for a future date</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="blog-form-label">Author</label>
+                    <input type="text" class="form-control blog-form-control" value="{{ request.user.get_full_name }}" readonly>
+                    <small class="blog-form-text">You are the author of this post</small>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="blog-form-section">
+                <h3><i class="fas fa-bolt me-2"></i>Quick Actions</h3>
+                <div class="blog-quick-actions">
+                    <button type="button" class="btn btn-outline-info" id="generateMetaBtn">
+                        <i class="fas fa-magic me-1"></i> Generate Meta Tags
+                    </button>
+                    <button type="button" class="btn btn-outline-success" id="generateExcerptBtn">
+                        <i class="fas fa-paragraph me-1"></i> Generate Excerpt
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" id="checkSeoBtn">
+                        <i class="fas fa-search me-1"></i> Check SEO
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="blog-form-actions">
+                <button type="submit" name="action" value="publish" class="btn btn-primary btn-lg me-2">
+                    <i class="fas fa-paper-plane me-2"></i> Publish Now
+                </button>
+                <button type="submit" name="action" value="draft" class="btn btn-outline-secondary btn-lg me-2">
+                    <i class="fas fa-save me-2"></i> Save as Draft
+                </button>
+                <a href="{% url 'admin_dashboard:all_blogs' %}" class="btn btn-secondary btn-lg">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-lg-4">
+        <!-- Blog Preview -->
+        <div class="blog-preview-card">
+            <h5 class="mb-3">Blog Preview</h5>
+            <div class="blog-preview-image" id="blogPreviewImage">
+                <i class="fas fa-image fa-2x text-muted"></i>
+            </div>
+            <h4 id="previewTitle" class="mb-2">Blog Title</h4>
+            <div class="text-muted small mb-3">
+                <span id="previewDate">{% now "M d, Y" %}</span> • 
+                <span id="previewAuthor">{{ request.user.get_full_name }}</span> • 
+                <span id="previewCategory">Uncategorized</span>
+            </div>
+            <p id="previewExcerpt" class="text-muted mb-3">Blog excerpt will appear here...</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="badge bg-secondary" id="previewStatus">Draft</span>
+                <button class="btn btn-sm btn-outline-primary" disabled>Read More</button>
             </div>
         </div>
 
         <!-- SEO Score -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0">SEO Score</h5>
-            </div>
-            <div class="card-body text-center">
-                <div class="seo-score-circle mb-3">
-                    <div class="progress-circle" data-value="0">
-                        <span class="progress-value">0%</span>
-                    </div>
+        <div class="blog-preview-card">
+            <h5 class="mb-3">SEO Score</h5>
+            <div class="text-center">
+                <div class="blog-progress-circle">
+                    <div class="blog-progress-value" id="seoScoreValue">0%</div>
                 </div>
-                <div id="seo-feedback">
-                    <p class="small text-muted">Fill in the blog details to get SEO suggestions</p>
+                <div id="seoFeedback">
+                    <p class="small text-muted mb-0">Fill in the blog details to get SEO suggestions</p>
                 </div>
             </div>
         </div>
 
-        <!-- Quick Actions -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Quick Actions</h5>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <button type="button" class="btn btn-outline-info btn-sm" id="generate-meta">
-                        <i class="fas fa-magic me-1"></i> Generate Meta Tags
-                    </button>
-                    <button type="button" class="btn btn-outline-success btn-sm" id="generate-excerpt">
-                        <i class="fas fa-paragraph me-1"></i> Generate Excerpt
-                    </button>
-                    <button type="button" class="btn btn-outline-warning btn-sm" id="check-seo">
-                        <i class="fas fa-search me-1"></i> Check SEO
-                    </button>
+        <!-- Character Count -->
+        <div class="blog-preview-card">
+            <h5 class="mb-3">Content Stats</h5>
+            <div class="small">
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Title Length:</span>
+                    <span id="titleLength">0 characters</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Excerpt Length:</span>
+                    <span id="excerptLength">0 characters</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Content Length:</span>
+                    <span id="contentLength">0 characters</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Meta Description:</span>
+                    <span id="metaDescLength">0 characters</span>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
 <script>
-$(document).ready(function() {
-    // Auto-generate slug
-    function generateSlug() {
-        const title = $('input[name="title"]').val();
-        if (title) {
-            const slug = title.toLowerCase()
-                .replace(/[^a-z0-9 -]/g, '')
-                .replace(/\s+/g, '-')
-                .replace(/-+/g, '-');
-            $('input[name="slug"]').val(slug);
-            updatePreview();
-        }
-    }
-
-    $('input[name="title"]').on('blur', function() {
-        if (!$('input[name="slug"]').val()) {
-            generateSlug();
-        }
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all blog functionality
+        initializeBlogForm();
     });
 
-    $('#generate-slug').on('click', generateSlug);
+    function initializeBlogForm() {
+        // Elements
+        const titleInput = document.getElementById('blogTitle');
+        const slugInput = document.getElementById('blogSlug');
+        const excerptInput = document.getElementById('blogExcerpt');
+        const contentInput = document.getElementById('blogContent');
+        const metaTitleInput = document.getElementById('blogMetaTitle');
+        const metaDescriptionInput = document.getElementById('blogMetaDescription');
+        const featuredImageInput = document.getElementById('blogFeaturedImage');
+        const categorySelect = document.getElementById('blogCategory');
 
-    // Featured image preview
-    $('#featured-image').on('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                $('#preview-featured-image').html(
-                    `<img src="${e.target.result}" class="img-fluid rounded featured-image-preview" alt="Featured Image">`
-                );
-            };
-            reader.readAsDataURL(file);
+        // Generate slug from title
+        function generateSlug() {
+            const title = titleInput.value;
+            if (title) {
+                const slug = title.toLowerCase()
+                    .replace(/[^a-z0-9 -]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+                slugInput.value = slug;
+                updatePreview();
+            }
         }
-    });
 
-    // Real-time preview updates
-    function updatePreview() {
-        $('#preview-title').text($('input[name="title"]').val() || 'Blog Title');
-        $('#preview-excerpt').text($('textarea[name="excerpt"]').val() || 'Blog excerpt will appear here...');
+        // Update real-time preview
+        function updatePreview() {
+            // Update preview card
+            document.getElementById('previewTitle').textContent = titleInput.value || 'Blog Title';
+            document.getElementById('previewExcerpt').textContent = excerptInput.value || 'Blog excerpt will appear here...';
+            document.getElementById('previewCategory').textContent = categorySelect.options[categorySelect.selectedIndex]?.text || 'Uncategorized';
+
+            // Update SEO preview
+            document.getElementById('seoTitlePreview').textContent = 
+                (metaTitleInput.value || titleInput.value || 'Blog Post Title') + ' - {{ site_settings.site_name }}';
+            document.getElementById('seoDescriptionPreview').textContent = 
+                metaDescriptionInput.value || excerptInput.value || 'Blog post description will appear here in search results...';
+            document.getElementById('seoUrlPreview').textContent = 
+                'https://yoursite.com/blog/' + (slugInput.value || 'sample-post') + '/';
+
+            // Update character counts
+            updateCharacterCounts();
+        }
+
+        // Update character counts
+        function updateCharacterCounts() {
+            document.getElementById('titleLength').textContent = titleInput.value.length + ' characters';
+            document.getElementById('excerptLength').textContent = excerptInput.value.length + ' characters';
+            document.getElementById('contentLength').textContent = contentInput.value.length + ' characters';
+            document.getElementById('metaDescLength').textContent = metaDescriptionInput.value.length + ' characters';
+            
+            // Update meta character counters
+            document.getElementById('metaTitleCount').textContent = metaTitleInput.value.length;
+            document.getElementById('metaDescriptionCount').textContent = metaDescriptionInput.value.length;
+        }
+
+        // Featured image preview
+        function handleImagePreview(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('featuredImagePreview');
+            const placeholder = document.getElementById('imagePlaceholder');
+            const blogPreview = document.getElementById('blogPreviewImage');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    
+                    // Update blog preview
+                    blogPreview.innerHTML = `<img src="${e.target.result}" alt="Featured Image">`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+                blogPreview.innerHTML = '<i class="fas fa-image fa-2x text-muted"></i>';
+            }
+        }
+
+        // Generate meta tags automatically
+        function generateMetaTags() {
+            if (titleInput.value) {
+                metaTitleInput.value = titleInput.value + ' - {{ site_settings.site_name }}';
+                metaDescriptionInput.value = excerptInput.value || 
+                    `Read this blog post about ${titleInput.value}. Learn more and get insights.`;
+                updatePreview();
+                showNotification('Meta tags generated successfully!', 'success');
+            }
+        }
+
+        // Generate excerpt from content
+        function generateExcerpt() {
+            if (contentInput.value) {
+                const excerpt = contentInput.value.substring(0, 150).replace(/<[^>]*>/g, '') + '...';
+                excerptInput.value = excerpt;
+                updatePreview();
+                showNotification('Excerpt generated from content!', 'success');
+            }
+        }
+
+        // Calculate SEO score
+        function calculateSeoScore() {
+            let score = 0;
+            
+            if (titleInput.value && titleInput.value.length > 10) score += 20;
+            if (excerptInput.value && excerptInput.value.length > 50) score += 15;
+            if (contentInput.value && contentInput.value.length > 200) score += 25;
+            if (metaTitleInput.value && metaTitleInput.value.length > 30 && metaTitleInput.value.length < 60) score += 20;
+            if (metaDescriptionInput.value && metaDescriptionInput.value.length > 100 && metaDescriptionInput.value.length < 160) score += 15;
+            if (featuredImageInput.files[0]) score += 5;
+
+            return score;
+        }
+
+        function updateSeoScore() {
+            const score = calculateSeoScore();
+            document.getElementById('seoScoreValue').textContent = score + '%';
+
+            let feedback = '';
+            if (score < 50) {
+                feedback = 'Add more content and optimize meta tags for better SEO.';
+            } else if (score < 80) {
+                feedback = 'Good start! Consider adding more detailed content.';
+            } else {
+                feedback = 'Excellent! Your blog post is well-optimized for SEO.';
+            }
+            document.getElementById('seoFeedback').innerHTML = '<p class="small">' + feedback + '</p>';
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const alertClass = type === 'error' ? 'alert-danger' : type === 'success' ? 'alert-success' : 'alert-info';
+            const icon = type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info';
+
+            const notification = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${icon} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert-dismissible');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            // Add to page
+            const container = document.querySelector('.container-fluid');
+            if (container) {
+                container.insertAdjacentHTML('afterbegin', notification);
+            }
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-dismissible');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+
+        // Form validation
+        function validateForm(event) {
+            let valid = true;
+
+            if (!titleInput.value.trim()) {
+                showNotification('Blog title is required', 'error');
+                titleInput.focus();
+                valid = false;
+            } else if (!slugInput.value.trim()) {
+                showNotification('Slug is required', 'error');
+                slugInput.focus();
+                valid = false;
+            } else if (!categorySelect.value) {
+                showNotification('Category is required', 'error');
+                categorySelect.focus();
+                valid = false;
+            } else if (!featuredImageInput.files[0]) {
+                showNotification('Featured image is required', 'error');
+                featuredImageInput.focus();
+                valid = false;
+            } else if (!contentInput.value.trim()) {
+                showNotification('Content is required', 'error');
+                contentInput.focus();
+                valid = false;
+            }
+
+            if (!valid) {
+                event.preventDefault();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('generateSlugBtn').addEventListener('click', generateSlug);
+        titleInput.addEventListener('blur', function() {
+            if (!slugInput.value) {
+                generateSlug();
+            }
+        });
+
+        featuredImageInput.addEventListener('change', handleImagePreview);
         
-        // SEO preview
-        $('#seo-title-preview').text(($('input[name="meta_title"]').val() || $('input[name="title"]').val() || 'Blog Title') + ' - {{ site_settings.site_name }}');
-        $('#seo-description-preview').text($('textarea[name="meta_description"]').val() || $('textarea[name="excerpt"]').val() || 'Blog post description will appear here in search results...');
-        $('#seo-url-preview').text('https://yoursite.com/blog/' + ($('input[name="slug"]').val() || 'sample-post') + '/');
-    }
+        document.getElementById('generateMetaBtn').addEventListener('click', generateMetaTags);
+        document.getElementById('generateExcerptBtn').addEventListener('click', generateExcerpt);
+        document.getElementById('checkSeoBtn').addEventListener('click', updateSeoScore);
 
-    // Character counters
-    $('input[name="meta_title"]').on('input', function() {
-        const count = $(this).val().length;
-        $('#meta-title-count').text(count);
+        // Real-time updates
+        [titleInput, excerptInput, contentInput, slugInput, metaTitleInput, metaDescriptionInput, categorySelect].forEach(element => {
+            element.addEventListener('input', updatePreview);
+        });
+
+        featuredImageInput.addEventListener('change', updateSeoScore);
+
+        // Form submission
+        document.getElementById('blogAddForm').addEventListener('submit', validateForm);
+
+        // Initialize
         updatePreview();
-    });
-
-    $('textarea[name="meta_description"]').on('input', function() {
-        const count = $(this).val().length;
-        $('#meta-description-count').text(count);
-        updatePreview();
-    });
-
-    $('input[name="title"]').on('input', updatePreview);
-    $('textarea[name="excerpt"]').on('input', updatePreview);
-    $('input[name="slug"]').on('input', updatePreview);
-    $('input[name="meta_title"]').on('input', updatePreview);
-    $('textarea[name="meta_description"]').on('input', updatePreview);
-
-    // Category update
-    $('select[name="category"]').on('change', function() {
-        const categoryName = $(this).find('option:selected').text();
-        $('#preview-category').text(categoryName || 'Uncategorized');
-    });
-
-    // Generate meta tags
-    $('#generate-meta').on('click', function() {
-        const title = $('input[name="title"]').val();
-        const excerpt = $('textarea[name="excerpt"]').val();
-        
-        if (title) {
-            $('input[name="meta_title"]').val(title + ' - {{ site_settings.site_name }}');
-            $('textarea[name="meta_description"]').val(
-                excerpt || `Read this blog post about ${title}. Learn more and get insights.`
-            );
-            updatePreview();
-            showNotification('Meta tags generated successfully!', 'success');
-        }
-    });
-
-    // Generate excerpt from content
-    $('#generate-excerpt').on('click', function() {
-        const content = $('textarea[name="content"]').val();
-        if (content) {
-            const excerpt = content.substring(0, 150).replace(/<[^>]*>/g, '') + '...';
-            $('textarea[name="excerpt"]').val(excerpt);
-            updatePreview();
-            showNotification('Excerpt generated from content!', 'success');
-        }
-    });
-
-    // SEO score calculation
-    function calculateSEOScore() {
-        let score = 0;
-        const title = $('input[name="title"]').val();
-        const excerpt = $('textarea[name="excerpt"]').val();
-        const content = $('textarea[name="content"]').val();
-        const metaTitle = $('input[name="meta_title"]').val();
-        const metaDescription = $('textarea[name="meta_description"]').val();
-        const featuredImage = $('#featured-image')[0].files[0];
-
-        if (title && title.length > 10) score += 20;
-        if (excerpt && excerpt.length > 50) score += 15;
-        if (content && content.length > 200) score += 25;
-        if (metaTitle && metaTitle.length > 30 && metaTitle.length < 60) score += 20;
-        if (metaDescription && metaDescription.length > 100 && metaDescription.length < 160) score += 15;
-        if (featuredImage) score += 5;
-
-        return score;
+        updateSeoScore();
     }
-
-    function updateSEOScore() {
-        const score = calculateSEOScore();
-        $('.progress-value').text(score + '%');
-        $('.progress-circle').attr('data-value', score);
-        
-        let feedback = '';
-        if (score < 50) {
-            feedback = 'Add more content and optimize meta tags for better SEO.';
-        } else if (score < 80) {
-            feedback = 'Good start! Consider adding more detailed content.';
-        } else {
-            feedback = 'Excellent! Your blog post is well-optimized for SEO.';
-        }
-        $('#seo-feedback').html('<p class="small">' + feedback + '</p>');
-    }
-
-    // Update SEO score on changes
-    $('input[name="title"], textarea[name="excerpt"], textarea[name="content"], input[name="meta_title"], textarea[name="meta_description"], #featured-image').on('input change', updateSEOScore);
-
-    // Form validation
-    $('#blog-form').on('submit', function(e) {
-        let valid = true;
-        
-        if (!$('input[name="title"]').val()) {
-            showNotification('Blog title is required', 'error');
-            valid = false;
-        }
-        
-        if (!$('input[name="slug"]').val()) {
-            showNotification('Slug is required', 'error');
-            valid = false;
-        }
-        
-        if (!$('select[name="category"]').val()) {
-            showNotification('Category is required', 'error');
-            valid = false;
-        }
-        
-        if (!$('#featured-image')[0].files[0]) {
-            showNotification('Featured image is required', 'error');
-            valid = false;
-        }
-        
-        if (!$('textarea[name="content"]').val()) {
-            showNotification('Content is required', 'error');
-            valid = false;
-        }
-        
-        if (!valid) {
-            e.preventDefault();
-            $('#content-tab').tab('show');
-        }
-    });
-
-    // Initialize
-    updatePreview();
-    updateSEOScore();
-});
-
-function showNotification(message, type = 'info') {
-    const alertClass = type === 'error' ? 'alert-danger' : 
-                      type === 'success' ? 'alert-success' : 'alert-info';
-    
-    const notification = $(`
-        <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
-            <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info'} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `);
-    
-    $('.alert-dismissible').alert('close');
-    $('.messages-container').html(notification);
-    
-    setTimeout(() => notification.alert('close'), 5000);
-}
 </script>
-
-<style>
-.progress-circle {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: conic-gradient(#28a745 0% var(--value), #e9ecef var(--value) 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto;
-    position: relative;
-}
-.progress-circle::before {
-    content: '';
-    position: absolute;
-    width: 80px;
-    height: 80px;
-    background: white;
-    border-radius: 50%;
-}
-.progress-value {
-    position: relative;
-    font-weight: bold;
-    font-size: 1.2em;
-}
-.card-header {
-    padding: 0;
-}
-
-.nav-tabs {
-    display: flex;
-    justify-content: space-between;
-    padding: 0;
-}
-
-.nav-tabs .nav-item {
-    flex: 1;
-    text-align: center;
-}
-.card-body {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-}
-
-.mt-4 {
-    margin-top: auto;
-}
-.row {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.col-lg-8, .col-lg-4 {
-    padding: 0.5rem;
-}
-
-@media (max-width: 767px) {
-    .col-lg-8, .col-lg-4 {
-        width: 100%;
-    }
-}
-.tab-content {
-    margin-top: 20px;  /* Add margin-top to separate tabs from content */
-}
-
-</style>
 {% endblock %}

@@ -28,15 +28,16 @@
         </div>
 
         <ul class="list-unstyled components">
+            <!-- Dashboard -->
             <li>
                 <a href="{% url 'admin_dashboard:dashboard' %}">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </a>
             </li>
-            
+
             <!-- Orders -->
             <li>
-                <a href="#ordersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#ordersSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-shopping-cart"></i> Orders
                 </a>
                 <ul class="collapse list-unstyled" id="ordersSubmenu">
@@ -45,56 +46,60 @@
                     <li><a href="{% url 'admin_dashboard:fake_orders' %}">Fake Order</a></li>
                 </ul>
             </li>
-            
+
             <!-- Products -->
             <li>
-                <a href="#productsSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#productsSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-box"></i> Products
                 </a>
                 <ul class="collapse list-unstyled" id="productsSubmenu">
                     <li><a href="{% url 'admin_dashboard:add_product' %}">Add Product</a></li>
                     <li><a href="{% url 'admin_dashboard:product_list' %}">Product List</a></li>
                     <li><a href="{% url 'admin_dashboard:product_reporting' %}">Product Reporting</a></li>
+
                     <li>
-                        <a href="#productCategorySubmenu" data-bs-toggle="collapse">Product Category</a>
+                        <a href="#productCategorySubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Product Category</a>
                         <ul class="collapse list-unstyled" id="productCategorySubmenu">
                             <li><a href="{% url 'admin_dashboard:add_category' %}">Create Category</a></li>
                             <li><a href="{% url 'admin_dashboard:category_list' %}">Category List</a></li>
                         </ul>
                     </li>
+
                     <li>
-                        <a href="#brandSubmenu" data-bs-toggle="collapse">Product Brand</a>
+                        <a href="#brandSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Product Brand</a>
                         <ul class="collapse list-unstyled" id="brandSubmenu">
                             <li><a href="{% url 'admin_dashboard:add_brand' %}">Create Brand</a></li>
                             <li><a href="{% url 'admin_dashboard:brand_list' %}">Brand List</a></li>
                         </ul>
                     </li>
+
                     <li>
-                        <a href="#supplierSubmenu" data-bs-toggle="collapse">Supplier</a>
+                        <a href="#supplierSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Supplier</a>
                         <ul class="collapse list-unstyled" id="supplierSubmenu">
                             <li><a href="{% url 'admin_dashboard:add_supplier' %}">Create Supplier</a></li>
                             <li><a href="{% url 'admin_dashboard:supplier_list' %}">Supplier List</a></li>
                         </ul>
                     </li>
+
                     <li><a href="{% url 'admin_dashboard:inventory_list' %}">Inventory List</a></li>
                 </ul>
             </li>
-            
+
             <!-- Offers -->
             <li>
-                <a href="#offersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#offersSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-tag"></i> Offers
                 </a>
                 <ul class="collapse list-unstyled" id="offersSubmenu">
                     <li>
-                        <a href="#comboSubmenu" data-bs-toggle="collapse">Combo Offer</a>
+                        <a href="#comboSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Combo Offer</a>
                         <ul class="collapse list-unstyled" id="comboSubmenu">
                             <li><a href="{% url 'admin_dashboard:add_combo_offer' %}">New Combo</a></li>
                             <li><a href="{% url 'admin_dashboard:combo_offer_list' %}">Combo List</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a href="#flashSaleSubmenu" data-bs-toggle="collapse">Flash Sale</a>
+                        <a href="#flashSaleSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Flash Sale</a>
                         <ul class="collapse list-unstyled" id="flashSaleSubmenu">
                             <li><a href="{% url 'admin_dashboard:add_flash_sale' %}">New Flash Sale</a></li>
                             <li><a href="{% url 'admin_dashboard:flash_sale_list' %}">Flash Sale List</a></li>
@@ -105,11 +110,10 @@
                     <li><a href="{% url 'admin_dashboard:popup_offers' %}">Pop Up Offer</a></li>
                 </ul>
             </li>
-            
-            <!-- Continue with other menu items... -->
-                         <!-- Courier & Delivery -->
+
+            <!-- Courier & Delivery -->
             <li>
-                <a href="#courierSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#courierSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-truck"></i> Courier & Delivery
                 </a>
                 <ul class="collapse list-unstyled" id="courierSubmenu">
@@ -120,7 +124,7 @@
 
             <!-- Payment -->
             <li>
-                <a href="#paymentSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#paymentSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-credit-card"></i> Payment
                 </a>
                 <ul class="collapse list-unstyled" id="paymentSubmenu">
@@ -132,7 +136,7 @@
 
             <!-- Employees -->
             <li>
-                <a href="#employeeSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#employeeSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-users"></i> Employees
                 </a>
                 <ul class="collapse list-unstyled" id="employeeSubmenu">
@@ -145,7 +149,7 @@
 
             <!-- Customers -->
             <li>
-                <a href="#customersSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#customersSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-user-friends"></i> Customers
                 </a>
                 <ul class="collapse list-unstyled" id="customersSubmenu">
@@ -156,7 +160,7 @@
 
             <!-- Blogs -->
             <li>
-                <a href="#blogsSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#blogsSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-blog"></i> Blogs
                 </a>
                 <ul class="collapse list-unstyled" id="blogsSubmenu">
@@ -169,33 +173,33 @@
 
             <!-- Marketing -->
             <li>
-                <a href="#marketingSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#marketingSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-bullhorn"></i> Marketing
                 </a>
                 <ul class="collapse list-unstyled" id="marketingSubmenu">
                     <li>
-                        <a href="#facebookSubmenu" data-bs-toggle="collapse">Facebook</a>
+                        <a href="#facebookSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Facebook</a>
                         <ul class="collapse list-unstyled" id="facebookSubmenu">
                             <li><a href="{% url 'admin_dashboard:facebook_conversion_api' %}">Conversion API</a></li>
                             <li><a href="{% url 'admin_dashboard:messenger_integration' %}">Messenger Integration</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a href="#googleSubmenu" data-bs-toggle="collapse">Google</a>
+                        <a href="#googleSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Google</a>
                         <ul class="collapse list-unstyled" id="googleSubmenu">
                             <li><a href="{% url 'admin_dashboard:google_tag_manager' %}">Google Tag Manager (GTM)</a></li>
                             <li><a href="{% url 'admin_dashboard:google_analytics' %}">Google Analytics (GA4)</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a href="#seoSubmenu" data-bs-toggle="collapse">SEO</a>
+                        <a href="#seoSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">SEO</a>
                         <ul class="collapse list-unstyled" id="seoSubmenu">
                             <li><a href="{% url 'admin_dashboard:technical_seo' %}">Technical SEO</a></li>
                             <li><a href="{% url 'admin_dashboard:one_page_seo' %}">One Page SEO</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a href="#smsSubmenu" data-bs-toggle="collapse">SMS Marketing</a>
+                        <a href="#smsSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">SMS Marketing</a>
                         <ul class="collapse list-unstyled" id="smsSubmenu">
                             <li><a href="{% url 'admin_dashboard:sms_api' %}">API Integration</a></li>
                             <li><a href="{% url 'admin_dashboard:sms_message_writing' %}">Message Writing</a></li>
@@ -208,7 +212,7 @@
 
             <!-- Manage Site -->
             <li>
-                <a href="#manageSiteSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#manageSiteSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-cogs"></i> Manage Site
                 </a>
                 <ul class="collapse list-unstyled" id="manageSiteSubmenu">
@@ -217,16 +221,14 @@
                     <li><a href="{% url 'admin_dashboard:header_design' %}">Header Design</a></li>
                     <li><a href="{% url 'admin_dashboard:footer_design' %}">Footer Design</a></li>
                     <li><a href="{% url 'admin_dashboard:order_tracking' %}">Order Tracking</a></li>
-                    <!-- <li><a href=">Product List & Category Page</a></li>
-                    <li><a href="">Product List Design</a></li>
-                    <li><a href="">Product Details Page</a></li> -->
                     <li><a href="{% url 'admin_dashboard:checkout_page_design' %}">Checkout Page Design</a></li>
                     <li><a href="{% url 'admin_dashboard:thank_you_page' %}">Thank You Page Design</a></li>
                     <li><a href="{% url 'admin_dashboard:invoice_design' %}">Manage Invoice Design</a></li>
                     <li><a href="{% url 'admin_dashboard:custom_css' %}">Custom CSS</a></li>
                     <li><a href="{% url 'admin_dashboard:custom_js' %}">Custom JS</a></li>
+
                     <li>
-                        <a href="#bannerSubmenu" data-bs-toggle="collapse">Banners & Sliders</a>
+                        <a href="#bannerSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">Banners & Sliders</a>
                         <ul class="collapse list-unstyled" id="bannerSubmenu">
                             <li><a href="{% url 'admin_dashboard:all_banners' %}">All Banners</a></li>
                             <li><a href="{% url 'admin_dashboard:add_banner' %}">Add Banners</a></li>
@@ -237,7 +239,7 @@
 
             <!-- Backend Customization -->
             <li>
-                <a href="#backendSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#backendSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-tools"></i> Backend Customization
                 </a>
                 <ul class="collapse list-unstyled" id="backendSubmenu">
@@ -248,7 +250,7 @@
 
             <!-- Page Builder -->
             <li>
-                <a href="#pageBuilderSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#pageBuilderSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-pencil-ruler"></i> Page Builder
                 </a>
                 <ul class="collapse list-unstyled" id="pageBuilderSubmenu">
@@ -262,7 +264,7 @@
 
             <!-- Profile -->
             <li>
-                <a href="#profileSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#profileSubmenu" class="dropdown-toggle" data-bs-toggle="collapse" aria-expanded="false">
                     <i class="fas fa-user-cog"></i> Profile
                 </a>
                 <ul class="collapse list-unstyled" id="profileSubmenu">
@@ -270,7 +272,6 @@
                     <li><a href="{% url 'admin_dashboard:admin_logout' %}">Log Out</a></li>
                 </ul>
             </li>
-            
         </ul>
     </nav>
 
