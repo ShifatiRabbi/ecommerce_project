@@ -99,6 +99,9 @@ urlpatterns = [
     path('manage/custom-js/', views.custom_js, name='custom_js'),
     path('manage/banners/', views.banner_list, name='all_banners'),
     path('manage/banners/add/', views.add_banner, name='add_banner'),
+     # AJAX endpoints
+    path('ajax/set-active-header/', views.ajax_set_active_header, name='ajax_set_active_header'),
+    path('ajax/save-header-settings/', views.ajax_save_header_settings, name='ajax_save_header_settings'),
     
     # Backend Customization
     path('customization/orders/', views.orders_customize, name='orders_customize'),

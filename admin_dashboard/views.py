@@ -19,6 +19,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
 from .forms import *
+from core.models import *
 
 def get_current_site(request):
     """Utility function to get current site"""
@@ -1808,60 +1809,80 @@ def homepage_design(request):
 @login_required
 @admin_required
 def header_design(request):
-    # Get header templates and settings
-    header_templates = [
-        {
-            'id': 1,
-            'name': 'Logo Left, Menu Middle, Icons Right',
-            'description': 'Classic header layout with logo on left',
-            'layout': 'logo_left',
-            'class_name': 'header-logo-left'
-        },
-        {
-            'id': 2, 
-            'name': 'Menu Left, Logo Center, Icons Right',
-            'description': 'Modern layout with centered logo',
-            'layout': 'logo_center',
-            'class_name': 'header-logo-center'
-        },
-        {
-            'id': 3,
-            'name': 'Minimal with Side Menu',
-            'description': 'Clean minimal design with hamburger menu',
-            'layout': 'minimal',
-            'class_name': 'header-minimal'
-        }
-    ]
+    site_settings = SiteSettings.get_settings()
     
-    active_header = header_templates[0]  # This would come from database
-    header_settings = {}  # This would come from database
-    menu_items = [
-        {'title': 'Home', 'url': '/'},
-        {'title': 'Shop', 'url': '/shop/'},
-        {'title': 'Categories', 'url': '/categories/'},
-        {'title': 'Contact', 'url': '/contact/'},
-    ]
-    custom_css = ""  # This would come from database
+    if request.method == 'POST':
+        site_settings.active_header = request.POST.get('active_header', 'header1')
+        site_settings.sticky_header = 'sticky_header' in request.POST
+        site_settings.header_background = request.POST.get('header_background', '#ffffff')
+        site_settings.header_text_color = request.POST.get('header_text_color', '#333333')
+        site_settings.header_height = request.POST.get('header_height', 80)
+        site_settings.logo_size = request.POST.get('logo_size', 40)
+        site_settings.save()
+        
+        messages.success(request, 'Header settings updated successfully!')
+        return redirect('admin_dashboard:header_design')
     
     context = {
-        'header_templates': header_templates,
-        'active_header': active_header,
-        'header_settings': header_settings,
-        'menu_items': menu_items,
-        'custom_css': custom_css,
+        'site_settings': site_settings,
+        'header_choices': SiteSettings.HEADER_CHOICES,
     }
     return render(request, 'admin_dashboard/manage/header_design.html', context)
 
 @login_required
 @admin_required
 def footer_design(request):
-    # Footer design settings
+    site_settings = SiteSettings.get_settings()
+    
     if request.method == 'POST':
-        # Save footer design
-        messages.success(request, 'Footer design updated!')
+        site_settings.active_footer = request.POST.get('active_footer', 'footer1')
+        site_settings.footer_background = request.POST.get('footer_background', '#2c3e50')
+        site_settings.footer_text_color = request.POST.get('footer_text_color', '#ffffff')
+        site_settings.save()
+        
+        messages.success(request, 'Footer settings updated successfully!')
         return redirect('admin_dashboard:footer_design')
     
-    return render(request, 'admin_dashboard/manage/footer_design.html')
+    context = {
+        'site_settings': site_settings,
+        'footer_choices': SiteSettings.FOOTER_CHOICES,
+    }
+    return render(request, 'admin_dashboard/manage/footer_design.html', context)
+
+# AJAX views for header design
+@login_required
+@admin_required
+def ajax_set_active_header(request):
+    if request.method == 'POST' and request.is_ajax():
+        header_id = request.POST.get('header_id')
+        site_settings = SiteSettings.get_settings()
+        site_settings.active_header = header_id
+        site_settings.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Header template activated successfully!'
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@admin_required
+def ajax_save_header_settings(request):
+    if request.method == 'POST' and request.is_ajax():
+        site_settings = SiteSettings.get_settings()
+        
+        # Update settings from POST data
+        site_settings.sticky_header = request.POST.get('sticky_header') == 'true'
+        site_settings.header_background = request.POST.get('header_background', '#ffffff')
+        site_settings.header_text_color = request.POST.get('text_color', '#333333')
+        site_settings.header_height = request.POST.get('header_height', 80)
+        site_settings.logo_size = request.POST.get('logo_size', 40)
+        site_settings.save()
+        
+        return JsonResponse({'success': True})
+    
+    return JsonResponse({'success': False})
 
 @login_required
 @admin_required

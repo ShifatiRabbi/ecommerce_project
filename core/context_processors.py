@@ -3,19 +3,14 @@ from core.models import SiteSettings
 from shop.models import Category
 
 def site_settings(request):
-    try:
-        settings = SiteSettings.objects.first()
-        if not settings:
-            settings = SiteSettings.objects.create()
-    except:
-        settings = SiteSettings.objects.create()
+    settings = SiteSettings.get_settings()
     
     # Determine which header and footer to use
     header_template = f'includes/headers/{settings.active_header}.html'
     footer_template = f'includes/footers/{settings.active_footer}.html'
     
     # Get categories for menus
-    categories = Category.objects.filter(is_active=True)
+    categories = Category.objects.filter(is_active=True, parent__isnull=True)[:8]
     
     return {
         'site_settings': settings,
