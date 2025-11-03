@@ -20,6 +20,7 @@ from django.utils import timezone
 from django.contrib.sites.shortcuts import get_current_site
 from .forms import *
 from core.models import *
+from django.template.loader import render_to_string
 
 def get_current_site(request):
     """Utility function to get current site"""
@@ -1811,6 +1812,55 @@ def homepage_design(request):
 def header_design(request):
     site_settings = SiteSettings.get_settings()
     
+    # Header templates data for preview
+    header_templates = [
+        {
+            'id': 'header1',
+            'name': 'Header 1 - Classic',
+            'description': 'Logo left, search middle, icons right with top bar',
+            'layout': 'logo_left',
+            'is_active': site_settings.active_header == 'header1'
+        },
+        {
+            'id': 'header2', 
+            'name': 'Header 2 - Modern',
+            'description': 'Logo center, categories left, modern design',
+            'layout': 'logo_center',
+            'is_active': site_settings.active_header == 'header2'
+        },
+        {
+            'id': 'header3',
+            'name': 'Header 3 - Minimal',
+            'description': 'Clean minimal design with hamburger menu',
+            'layout': 'minimal',
+            'is_active': site_settings.active_header == 'header3'
+        },
+        {
+            'id': 'header4',
+            'name': 'Header 4 - Centered',
+            'description': 'Centered navigation with bottom border',
+            'layout': 'centered',
+            'is_active': site_settings.active_header == 'header4'
+        }
+    ]
+    
+    # Default menu items
+    menu_items = [
+        {'id': 1, 'title': 'Home', 'url': '/'},
+        {'id': 2, 'title': 'Shop', 'url': '/shop/'},
+        {'id': 3, 'title': 'Categories', 'url': '/categories/'},
+        {'id': 4, 'title': 'Contact', 'url': '/contact/'},
+    ]
+    
+    # Header elements settings (you can store these in database)
+    header_settings = {
+        'show_search': True,
+        'show_user': True,
+        'show_cart': True,
+        'show_language': False,
+        'show_wishlist': True,
+    }
+    
     if request.method == 'POST':
         site_settings.active_header = request.POST.get('active_header', 'header1')
         site_settings.sticky_header = 'sticky_header' in request.POST
@@ -1825,14 +1875,46 @@ def header_design(request):
     
     context = {
         'site_settings': site_settings,
-        'header_choices': SiteSettings.HEADER_CHOICES,
+        'header_templates': header_templates,
+        'active_header': next((h for h in header_templates if h['is_active']), header_templates[0]),
+        'menu_items': menu_items,
+        'header_settings': header_settings,
     }
     return render(request, 'admin_dashboard/manage/header_design.html', context)
+
 
 @login_required
 @admin_required
 def footer_design(request):
     site_settings = SiteSettings.get_settings()
+    
+    # Footer templates data for preview
+    footer_templates = [
+        {
+            'id': 'footer1',
+            'name': 'Footer 1 - Dark Modern',
+            'description': 'Dark theme with company info and newsletter',
+            'is_active': site_settings.active_footer == 'footer1'
+        },
+        {
+            'id': 'footer2',
+            'name': 'Footer 2 - Light Clean', 
+            'description': 'Light theme with trust badges and payment methods',
+            'is_active': site_settings.active_footer == 'footer2'
+        },
+        {
+            'id': 'footer3',
+            'name': 'Footer 3 - App Style',
+            'description': 'Mobile-friendly with app download links',
+            'is_active': site_settings.active_footer == 'footer3'
+        },
+        {
+            'id': 'footer4',
+            'name': 'Footer 4 - Bold Primary',
+            'description': 'Bold colors with featured links',
+            'is_active': site_settings.active_footer == 'footer4'
+        }
+    ]
     
     if request.method == 'POST':
         site_settings.active_footer = request.POST.get('active_footer', 'footer1')
@@ -1845,7 +1927,8 @@ def footer_design(request):
     
     context = {
         'site_settings': site_settings,
-        'footer_choices': SiteSettings.FOOTER_CHOICES,
+        'footer_templates': footer_templates,
+        'active_footer': next((f for f in footer_templates if f['is_active']), footer_templates[0]),
     }
     return render(request, 'admin_dashboard/manage/footer_design.html', context)
 
@@ -1853,7 +1936,7 @@ def footer_design(request):
 @login_required
 @admin_required
 def ajax_set_active_header(request):
-    if request.method == 'POST' and request.is_ajax():
+    if request.method == 'POST':
         header_id = request.POST.get('header_id')
         site_settings = SiteSettings.get_settings()
         site_settings.active_header = header_id
@@ -1868,21 +1951,78 @@ def ajax_set_active_header(request):
 
 @login_required
 @admin_required
-def ajax_save_header_settings(request):
-    if request.method == 'POST' and request.is_ajax():
+def ajax_set_active_footer(request):
+    if request.method == 'POST':
+        footer_id = request.POST.get('footer_id')
         site_settings = SiteSettings.get_settings()
-        
-        # Update settings from POST data
-        site_settings.sticky_header = request.POST.get('sticky_header') == 'true'
-        site_settings.header_background = request.POST.get('header_background', '#ffffff')
-        site_settings.header_text_color = request.POST.get('text_color', '#333333')
-        site_settings.header_height = request.POST.get('header_height', 80)
-        site_settings.logo_size = request.POST.get('logo_size', 40)
+        site_settings.active_footer = footer_id
         site_settings.save()
         
-        return JsonResponse({'success': True})
+        return JsonResponse({
+            'success': True,
+            'message': 'Footer template activated successfully!'
+        })
     
-    return JsonResponse({'success': False})
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@admin_required
+def ajax_save_header_settings(request):
+    if request.method == 'POST':
+        site_settings = SiteSettings.get_settings()
+        
+        try:
+            # Update basic settings
+            settings_data = json.loads(request.POST.get('settings', '[]'))
+            for setting in settings_data:
+                if setting['name'] == 'sticky_header':
+                    site_settings.sticky_header = setting['value'] == 'on'
+                elif setting['name'] == 'header_bg':
+                    site_settings.header_background = setting['value']
+                elif setting['name'] == 'text_color':
+                    site_settings.header_text_color = setting['value']
+                elif setting['name'] == 'header_height':
+                    site_settings.header_height = int(setting['value'])
+                elif setting['name'] == 'logo_size':
+                    site_settings.logo_size = int(setting['value'])
+            
+            # Save custom CSS
+            site_settings.custom_css = request.POST.get('custom_css', '')
+            
+            # Save menu items and header elements (you can store these in separate models)
+            menu_items = json.loads(request.POST.get('menu_items', '[]'))
+            header_elements = json.loads(request.POST.get('header_elements', '{}'))
+            
+            site_settings.save()
+            
+            return JsonResponse({'success': True})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
+@login_required
+@admin_required
+def ajax_preview_header(request):
+    if request.method == 'POST':
+        header_id = request.POST.get('header_id')
+        site_settings = SiteSettings.get_settings()
+        
+        # Render the header preview
+        context = {
+            'site_settings': site_settings,
+            'categories': [],  # Empty categories for preview
+            'cart': {'__len__': lambda: 3},  # Mock cart
+        }
+        
+        try:
+            html = render_to_string(f'includes/headers/{header_id}.html', context)
+            return JsonResponse({'success': True, 'html': html})
+        except:
+            return JsonResponse({'success': False, 'error': 'Template not found'})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 @login_required
 @admin_required

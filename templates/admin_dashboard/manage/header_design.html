@@ -23,17 +23,17 @@
             <div class="card-body">
                 <div class="header-templates">
                     {% for header in header_templates %}
-                    <div class="header-template-card {% if header.id == active_header.id %}active{% endif %}" 
+                    <div class="header-template-card {% if header.is_active %}active{% endif %}" 
                          data-header-id="{{ header.id }}">
                         <div class="template-preview">
-                            <div class="template-header {{ header.class_name }}">
+                            <div class="template-header {{ header.layout }}">
                                 <div class="header-content">
                                     {% if header.layout == 'logo_left' %}
                                     <div class="logo">Logo</div>
-                                    <div class="menu">Menu Items</div>
+                                    <div class="search">Search Bar</div>
                                     <div class="icons">Icons</div>
                                     {% elif header.layout == 'logo_center' %}
-                                    <div class="menu">Menu</div>
+                                    <div class="menu">Categories</div>
                                     <div class="logo">Logo</div>
                                     <div class="icons">Icons</div>
                                     {% elif header.layout == 'minimal' %}
@@ -41,6 +41,11 @@
                                     <div class="menu-icons">
                                         <span>Menu</span>
                                         <span>Icons</span>
+                                    </div>
+                                    {% elif header.layout == 'centered' %}
+                                    <div class="logo-menu">
+                                        <div class="logo">Logo</div>
+                                        <div class="menu">Navigation</div>
                                     </div>
                                     {% endif %}
                                 </div>
@@ -54,25 +59,17 @@
                                         data-header-id="{{ header.id }}">
                                     <i class="fas fa-eye me-1"></i> Preview
                                 </button>
-                                <button class="btn btn-sm btn-outline-success select-header {% if header.id == active_header.id %}d-none{% endif %}" 
+                                <button class="btn btn-sm btn-outline-success select-header {% if header.is_active %}d-none{% endif %}" 
                                         data-header-id="{{ header.id }}">
                                     <i class="fas fa-check me-1"></i> Select
                                 </button>
-                                <span class="badge bg-success selected-badge {% if header.id != active_header.id %}d-none{% endif %}">
+                                <span class="badge bg-success selected-badge {% if not header.is_active %}d-none{% endif %}">
                                     <i class="fas fa-check me-1"></i> Active
                                 </span>
                             </div>
                         </div>
                     </div>
                     {% endfor %}
-                </div>
-                
-                <!-- Custom Header Builder -->
-                <div class="custom-header-builder mt-4">
-                    <h6>Custom Header Builder</h6>
-                    <button class="btn btn-outline-primary w-100" id="create-custom-header">
-                        <i class="fas fa-plus me-1"></i> Create Custom Header
-                    </button>
                 </div>
             </div>
         </div>
@@ -88,7 +85,7 @@
                         <label class="form-label">Sticky Header</label>
                         <div class="form-check form-switch">
                             <input type="checkbox" class="form-check-input" name="sticky_header" 
-                                   id="sticky-header" {% if header_settings.sticky_header %}checked{% endif %}>
+                                   id="sticky-header" {% if site_settings.sticky_header %}checked{% endif %}>
                             <label class="form-check-label" for="sticky-header">Enable sticky header on scroll</label>
                         </div>
                     </div>
@@ -96,27 +93,27 @@
                     <div class="mb-3">
                         <label class="form-label">Header Background</label>
                         <input type="color" class="form-control" name="header_bg" 
-                               value="{{ header_settings.background_color|default:'#ffffff' }}">
+                               value="{{ site_settings.header_background }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Text Color</label>
                         <input type="color" class="form-control" name="text_color" 
-                               value="{{ header_settings.text_color|default:'#333333' }}">
+                               value="{{ site_settings.header_text_color }}">
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Header Height</label>
                         <input type="range" class="form-range" name="header_height" min="60" max="120" 
-                               value="{{ header_settings.height|default:80 }}">
-                        <div class="form-text text-end" id="height-value">80px</div>
+                               value="{{ site_settings.header_height }}">
+                        <div class="form-text text-end" id="height-value">{{ site_settings.header_height }}px</div>
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label">Logo Size</label>
                         <input type="range" class="form-range" name="logo_size" min="30" max="80" 
-                               value="{{ header_settings.logo_size|default:40 }}">
-                        <div class="form-text text-end" id="logo-size-value">40px</div>
+                               value="{{ site_settings.logo_size }}">
+                        <div class="form-text text-end" id="logo-size-value">{{ site_settings.logo_size }}px</div>
                     </div>
                 </form>
             </div>
@@ -127,68 +124,27 @@
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Live Preview</h5>
+                <h5 class="mb-0">Live Preview - {{ active_header.name }}</h5>
                 <div class="btn-group">
-                    <button class="btn btn-sm btn-outline-secondary" id="preview-desktop">
+                    <button class="btn btn-sm btn-outline-secondary active preview-desktop">
                         <i class="fas fa-desktop"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" id="preview-tablet">
+                    <button class="btn btn-sm btn-outline-secondary preview-tablet">
                         <i class="fas fa-tablet-alt"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary active" id="preview-mobile">
+                    <button class="btn btn-sm btn-outline-secondary preview-mobile">
                         <i class="fas fa-mobile-alt"></i>
                     </button>
                 </div>
             </div>
             <div class="card-body">
                 <div class="preview-container" id="preview-container">
-                    <div class="device-frame mobile">
+                    <div class="device-frame desktop">
                         <div class="device-screen">
                             <!-- Active Header Preview -->
-                            <header class="website-header {{ active_header.class_name }}" 
-                                    id="header-preview">
-                                <div class="container">
-                                    <div class="header-content">
-                                        {% if active_header.layout == 'logo_left' %}
-                                        <div class="logo">
-                                            <img src="{% static 'images/logo.png' %}" alt="Logo" 
-                                                 style="height: {{ header_settings.logo_size|default:40 }}px;">
-                                        </div>
-                                        <nav class="menu">
-                                            <a href="#">Home</a>
-                                            <a href="#">Shop</a>
-                                            <a href="#">Categories</a>
-                                            <a href="#">Contact</a>
-                                        </nav>
-                                        <div class="header-icons">
-                                            <a href="#"><i class="fas fa-search"></i></a>
-                                            <a href="#"><i class="fas fa-user"></i></a>
-                                            <a href="#"><i class="fas fa-shopping-cart"></i></a>
-                                        </div>
-                                        {% elif active_header.layout == 'logo_center' %}
-                                        <nav class="menu left-menu">
-                                            <a href="#">Home</a>
-                                            <a href="#">Shop</a>
-                                        </nav>
-                                        <div class="logo">
-                                            <img src="{% static 'images/logo.png' %}" alt="Logo"
-                                                 style="height: {{ header_settings.logo_size|default:40 }}px;">
-                                        </div>
-                                        <div class="header-content-right">
-                                            <nav class="menu right-menu">
-                                                <a href="#">Categories</a>
-                                                <a href="#">Contact</a>
-                                            </nav>
-                                            <div class="header-icons">
-                                                <a href="#"><i class="fas fa-search"></i></a>
-                                                <a href="#"><i class="fas fa-user"></i></a>
-                                                <a href="#"><i class="fas fa-shopping-cart"></i></a>
-                                            </div>
-                                        </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            </header>
+                            <div id="header-preview">
+                                {% include header_template %}
+                            </div>
                             
                             <!-- Sample Content -->
                             <div class="preview-content">
@@ -209,11 +165,30 @@
                             <div id="menu-items-container">
                                 {% for item in menu_items %}
                                 <div class="menu-item d-flex align-items-center mb-2">
-                                    <input type="text" class="form-control form-control-sm me-2" 
-                                           value="{{ item.title }}" placeholder="Menu text">
-                                    <input type="text" class="form-control form-control-sm me-2" 
-                                           value="{{ item.url }}" placeholder="URL">
-                                    <button class="btn btn-sm btn-outline-danger remove-menu-item">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-title" 
+                                           value="{{ item.title }}" placeholder="Menu text" data-id="{{ item.id }}">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-url" 
+                                           value="{{ item.url }}" placeholder="URL" data-id="{{ item.id }}">
+                                    <button class="btn btn-sm btn-outline-danger remove-menu-item" data-id="{{ item.id }}">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                {% empty %}
+                                <div class="menu-item d-flex align-items-center mb-2">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-title" 
+                                           value="Home" placeholder="Menu text" data-id="1">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-url" 
+                                           value="/" placeholder="URL" data-id="1">
+                                    <button class="btn btn-sm btn-outline-danger remove-menu-item" data-id="1">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="menu-item d-flex align-items-center mb-2">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-title" 
+                                           value="Shop" placeholder="Menu text" data-id="2">
+                                    <input type="text" class="form-control form-control-sm me-2 menu-url" 
+                                           value="/shop/" placeholder="URL" data-id="2">
+                                    <button class="btn btn-sm btn-outline-danger remove-menu-item" data-id="2">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 </div>
@@ -227,24 +202,29 @@
                         <div class="col-md-6">
                             <label class="form-label">Header Elements</label>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="show_search" 
-                                       id="show-search" checked>
+                                <input type="checkbox" class="form-check-input header-element" name="show_search" 
+                                       id="show-search" {% if header_settings.show_search %}checked{% endif %}>
                                 <label class="form-check-label" for="show-search">Show Search Icon</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="show_user" 
-                                       id="show-user" checked>
+                                <input type="checkbox" class="form-check-input header-element" name="show_user" 
+                                       id="show-user" {% if header_settings.show_user %}checked{% endif %}>
                                 <label class="form-check-label" for="show-user">Show User Account</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="show_cart" 
-                                       id="show-cart" checked>
+                                <input type="checkbox" class="form-check-input header-element" name="show_cart" 
+                                       id="show-cart" {% if header_settings.show_cart %}checked{% endif %}>
                                 <label class="form-check-label" for="show-cart">Show Shopping Cart</label>
                             </div>
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="show_language" 
-                                       id="show-language">
+                                <input type="checkbox" class="form-check-input header-element" name="show_language" 
+                                       id="show-language" {% if header_settings.show_language %}checked{% endif %}>
                                 <label class="form-check-label" for="show-language">Show Language Switcher</label>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input header-element" name="show_wishlist" 
+                                       id="show-wishlist" {% if header_settings.show_wishlist %}checked{% endif %}>
+                                <label class="form-check-label" for="show-wishlist">Show Wishlist</label>
                             </div>
                         </div>
                     </div>
@@ -252,7 +232,7 @@
             </div>
         </div>
         
-        <!-- CSS Customization -->
+        <!-- Custom CSS -->
         <div class="card mt-4">
             <div class="card-header">
                 <h5 class="mb-0">Custom CSS</h5>
@@ -260,56 +240,13 @@
             <div class="card-body">
                 <div class="mb-3">
                     <label class="form-label">Custom Header CSS</label>
-                    <textarea class="form-control" id="custom-header-css" rows="8" 
-                              placeholder="Add custom CSS for header styling...">{{ custom_css }}</textarea>
+                    <textarea class="form-control" id="custom-header-css" rows="6" 
+                              placeholder="Add custom CSS for header styling...">{{ site_settings.custom_css }}</textarea>
                 </div>
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle me-2"></i>
                     Use this area to add custom CSS styles that will be applied to the header.
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Create Custom Header Modal -->
-<div class="modal fade" id="createHeaderModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Custom Header</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="create-header-form">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Header Name</label>
-                                <input type="text" class="form-control" name="name" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Layout Type</label>
-                                <select class="form-select" name="layout" required>
-                                    <option value="logo_left">Logo Left, Menu Middle, Icons Right</option>
-                                    <option value="logo_center">Menu Left, Logo Center, Icons Right</option>
-                                    <option value="minimal">Minimal with Side Menu</option>
-                                    <option value="centered">Centered Logo with Bottom Menu</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Description</label>
-                        <textarea class="form-control" name="description" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" id="save-custom-header">Create Header</button>
             </div>
         </div>
     </div>
@@ -348,28 +285,50 @@
     padding: 10px;
     border-radius: 4px;
     font-size: 12px;
+    min-height: 50px;
 }
 
 .header-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
 }
 
 .logo {
     font-weight: bold;
     color: #007bff;
+    background: #e3f2fd;
+    padding: 4px 8px;
+    border-radius: 3px;
 }
 
-.menu a {
-    margin: 0 5px;
-    text-decoration: none;
-    color: #333;
+.search {
+    background: #f5f5f5;
+    padding: 4px 8px;
+    border-radius: 3px;
+    flex-grow: 1;
+    text-align: center;
 }
 
-.header-icons a {
-    margin-left: 10px;
-    color: #666;
+.icons {
+    background: #fff3e0;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.menu {
+    background: #e8f5e8;
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+
+.logo-menu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
 }
 
 .preview-container {
@@ -379,23 +338,29 @@
 }
 
 .device-frame {
-    max-width: 400px;
+    max-width: 100%;
     margin: 0 auto;
     border: 2px solid #333;
-    border-radius: 20px;
+    border-radius: 12px;
     background: white;
     overflow: hidden;
 }
 
-.device-screen {
-    background: white;
-    min-height: 600px;
+.device-frame.desktop {
+    max-width: 100%;
 }
 
-.website-header {
+.device-frame.tablet {
+    max-width: 768px;
+}
+
+.device-frame.mobile {
+    max-width: 375px;
+}
+
+.device-screen {
     background: white;
-    padding: 15px 0;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    min-height: 400px;
 }
 
 .preview-content .content-placeholder {
@@ -405,10 +370,22 @@
     border-radius: 4px;
 }
 
+.template-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
 .menu-item {
     background: #f8f9fa;
     padding: 8px;
     border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.customization-options {
+    border-top: 1px solid #e9ecef;
+    padding-top: 20px;
 }
 </style>
 {% endblock %}
@@ -416,12 +393,14 @@
 {% block extra_js %}
 <script>
 $(document).ready(function() {
+    let menuItemCounter = {{ menu_items|length|default:2 }};
+    
     // Header template selection
     $('.select-header').on('click', function() {
         const headerId = $(this).data('header-id');
         
         $.ajax({
-            url: '/admin-dashboard/ajax/set-active-header/',
+            url: '{% url "admin_dashboard:ajax_set_active_header" %}',
             type: 'POST',
             data: {
                 'header_id': headerId,
@@ -440,8 +419,8 @@ $(document).ready(function() {
                     $(`.select-header[data-header-id="${headerId}"]`).addClass('d-none');
                     $(`.selected-badge[data-header-id="${headerId}"]`).removeClass('d-none');
                     
-                    // Update preview
-                    updateHeaderPreview(response.header_data);
+                    // Reload preview
+                    location.reload();
                 }
             }
         });
@@ -450,34 +429,25 @@ $(document).ready(function() {
     // Preview header
     $('.preview-header').on('click', function() {
         const headerId = $(this).data('header-id');
-        // Load and preview header template
-        previewHeaderTemplate(headerId);
-    });
-
-    // Create custom header
-    $('#create-custom-header').on('click', function() {
-        $('#createHeaderModal').modal('show');
-    });
-
-    $('#save-custom-header').on('click', function() {
-        const formData = $('#create-header-form').serialize();
         
         $.ajax({
-            url: '/admin-dashboard/ajax/create-custom-header/',
+            url: '{% url "admin_dashboard:ajax_preview_header" %}',
             type: 'POST',
-            data: formData + '&csrfmiddlewaretoken={{ csrf_token }}',
+            data: {
+                'header_id': headerId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
             success: function(response) {
                 if (response.success) {
-                    $('#createHeaderModal').modal('hide');
-                    showNotification('Custom header created!', 'success');
-                    location.reload();
+                    $('#header-preview').html(response.html);
+                    showNotification('Preview updated!', 'info');
                 }
             }
         });
     });
 
     // Settings form changes
-    $('#header-settings-form input').on('change', function() {
+    $('#header-settings-form input').on('change input', function() {
         updateHeaderPreviewFromSettings();
     });
 
@@ -485,51 +455,59 @@ $(document).ready(function() {
     $('input[type="range"]').on('input', function() {
         const value = $(this).val();
         const target = $(this).attr('name') + '-value';
-        $('#' + target).text(value + ($(this).attr('name').includes('size') ? 'px' : 'px'));
+        $('#' + target).text(value + 'px');
         updateHeaderPreviewFromSettings();
     });
 
     // Add menu item
     $('#add-menu-item').on('click', function() {
+        menuItemCounter++;
         const newItem = $(`
             <div class="menu-item d-flex align-items-center mb-2">
-                <input type="text" class="form-control form-control-sm me-2" 
-                       placeholder="Menu text">
-                <input type="text" class="form-control form-control-sm me-2" 
-                       placeholder="URL" value="#">
-                <button class="btn btn-sm btn-outline-danger remove-menu-item">
+                <input type="text" class="form-control form-control-sm me-2 menu-title" 
+                       placeholder="Menu text" data-id="${menuItemCounter}">
+                <input type="text" class="form-control form-control-sm me-2 menu-url" 
+                       placeholder="URL" value="#" data-id="${menuItemCounter}">
+                <button class="btn btn-sm btn-outline-danger remove-menu-item" data-id="${menuItemCounter}">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
         `);
         $('#menu-items-container').append(newItem);
+        updateHeaderPreviewFromMenu();
     });
 
     // Remove menu item
     $(document).on('click', '.remove-menu-item', function() {
+        const itemId = $(this).data('id');
         $(this).closest('.menu-item').remove();
+        updateHeaderPreviewFromMenu();
+    });
+
+    // Menu item changes
+    $(document).on('input', '.menu-title, .menu-url', function() {
+        updateHeaderPreviewFromMenu();
+    });
+
+    // Header element toggles
+    $('.header-element').on('change', function() {
+        updateHeaderPreviewFromElements();
     });
 
     // Save header design
     $('#save-header-design').on('click', function() {
         const settings = $('#header-settings-form').serializeArray();
-        const menuItems = [];
         const customCSS = $('#custom-header-css').val();
-        
-        $('#menu-items-container .menu-item').each(function() {
-            const title = $(this).find('input').eq(0).val();
-            const url = $(this).find('input').eq(1).val();
-            if (title && url) {
-                menuItems.push({ title: title, url: url });
-            }
-        });
+        const menuItems = getMenuItems();
+        const headerElements = getHeaderElements();
         
         $.ajax({
-            url: '/admin-dashboard/ajax/save-header-design/',
+            url: '{% url "admin_dashboard:ajax_save_header_settings" %}',
             type: 'POST',
             data: {
-                'settings': settings,
+                'settings': JSON.stringify(settings),
                 'menu_items': JSON.stringify(menuItems),
+                'header_elements': JSON.stringify(headerElements),
                 'custom_css': customCSS,
                 'csrfmiddlewaretoken': '{{ csrf_token }}'
             },
@@ -542,11 +520,13 @@ $(document).ready(function() {
     });
 
     // Preview device type
-    $('.btn-group .btn').on('click', function() {
-        $('.btn-group .btn').removeClass('active');
+    $('.preview-desktop, .preview-tablet, .preview-mobile').on('click', function() {
+        $('.preview-desktop, .preview-tablet, .preview-mobile').removeClass('active');
         $(this).addClass('active');
         
-        const device = $(this).attr('id').replace('preview-', '');
+        const device = $(this).hasClass('preview-desktop') ? 'desktop' : 
+                      $(this).hasClass('preview-tablet') ? 'tablet' : 'mobile';
+        
         $('.device-frame').removeClass('desktop tablet mobile').addClass(device);
     });
 
@@ -555,42 +535,126 @@ $(document).ready(function() {
         const settings = {};
         
         formData.forEach(item => {
-            settings[item.name] = item.value;
+            if (item.name === 'sticky_header') {
+                settings[item.name] = item.value === 'on';
+            } else {
+                settings[item.name] = item.value;
+            }
         });
         
-        // Apply settings to preview
+        // Apply CSS variables to preview
         $('#header-preview').css({
-            'background-color': settings.header_bg,
-            'color': settings.text_color,
-            'height': settings.header_height + 'px'
+            '--header-bg': settings.header_bg,
+            '--header-text': settings.text_color,
+            '--header-height': settings.header_height + 'px',
+            '--logo-size': settings.logo_size + 'px'
         });
         
-        $('#header-preview .logo img').css({
-            'height': settings.logo_size + 'px'
-        });
-        
-        if (settings.sticky_header === 'on') {
-            $('#header-preview').addClass('sticky');
+        // Update sticky header
+        if (settings.sticky_header) {
+            $('#header-preview .main-header').addClass('sticky-header');
         } else {
-            $('#header-preview').removeClass('sticky');
+            $('#header-preview .main-header').removeClass('sticky-header');
         }
     }
 
-    function updateHeaderPreview(headerData) {
-        // Update preview with new header data
-        console.log('Updating preview with:', headerData);
-    }
-
-    function previewHeaderTemplate(headerId) {
-        // Load and preview specific header template
-        $.ajax({
-            url: `/admin-dashboard/ajax/get-header-template/${headerId}/`,
-            type: 'GET',
-            success: function(response) {
-                updateHeaderPreview(response);
+    function updateHeaderPreviewFromMenu() {
+        const menuItems = getMenuItems();
+        
+        // Update menu items in preview
+        $('#header-preview .navbar-nav').html('');
+        menuItems.forEach(item => {
+            if (item.title && item.url) {
+                $('#header-preview .navbar-nav').append(`
+                    <li class="nav-item">
+                        <a class="nav-link" href="${item.url}">${item.title}</a>
+                    </li>
+                `);
             }
         });
     }
+
+    function updateHeaderPreviewFromElements() {
+        const elements = getHeaderElements();
+        
+        // Toggle search
+        if (elements.show_search) {
+            $('#header-preview .search-container, #header-preview .search-toggle').show();
+        } else {
+            $('#header-preview .search-container, #header-preview .search-toggle').hide();
+        }
+        
+        // Toggle user account
+        if (elements.show_user) {
+            $('#header-preview .user-account, #header-preview .fa-user').closest('a, .dropdown').show();
+        } else {
+            $('#header-preview .user-account, #header-preview .fa-user').closest('a, .dropdown').hide();
+        }
+        
+        // Toggle cart
+        if (elements.show_cart) {
+            $('#header-preview .shopping-cart, #header-preview .fa-shopping-cart').closest('a').show();
+        } else {
+            $('#header-preview .shopping-cart, #header-preview .fa-shopping-cart').closest('a').hide();
+        }
+        
+        // Toggle language switcher
+        if (elements.show_language) {
+            $('#header-preview .language-switcher, #header-preview .fa-globe').closest('.dropdown').show();
+        } else {
+            $('#header-preview .language-switcher, #header-preview .fa-globe').closest('.dropdown').hide();
+        }
+        
+        // Toggle wishlist
+        if (elements.show_wishlist) {
+            $('#header-preview .wishlist, #header-preview .fa-heart').closest('a').show();
+        } else {
+            $('#header-preview .wishlist, #header-preview .fa-heart').closest('a').hide();
+        }
+    }
+
+    function getMenuItems() {
+        const menuItems = [];
+        $('#menu-items-container .menu-item').each(function() {
+            const title = $(this).find('.menu-title').val();
+            const url = $(this).find('.menu-url').val();
+            const id = $(this).find('.menu-title').data('id');
+            if (title && url) {
+                menuItems.push({ id: id, title: title, url: url });
+            }
+        });
+        return menuItems;
+    }
+
+    function getHeaderElements() {
+        return {
+            show_search: $('#show-search').is(':checked'),
+            show_user: $('#show-user').is(':checked'),
+            show_cart: $('#show-cart').is(':checked'),
+            show_language: $('#show-language').is(':checked'),
+            show_wishlist: $('#show-wishlist').is(':checked')
+        };
+    }
+
+    // Initialize
+    updateHeaderPreviewFromSettings();
+    updateHeaderPreviewFromMenu();
+    updateHeaderPreviewFromElements();
 });
+
+function showNotification(message, type) {
+    // Simple notification function
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+    const alert = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`);
+    
+    $('.container').first().prepend(alert);
+    
+    setTimeout(() => {
+        alert.alert('close');
+    }, 3000);
+}
 </script>
 {% endblock %}

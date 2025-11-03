@@ -3,7 +3,7 @@ from .models import SiteSettings, ContactMessage
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
-    list_display = ['site_name', 'active_header', 'active_footer', 'support_email']
+    list_display = ['site_name', 'active_header', 'active_footer']
     
     def has_add_permission(self, request):
         return not SiteSettings.objects.exists()

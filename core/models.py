@@ -1,25 +1,26 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
 from django.db import models
 from django.core.cache import cache
+from django.utils.text import slugify
 
 class SiteSettings(models.Model):
     HEADER_CHOICES = [
-        ('header1', 'Header 1 - Logo Left, Menu Middle, Icons Right'),
-        ('header2', 'Header 2 - Menu Left, Logo Middle, Icons Right'),
-        ('header3', 'Header 3 - Centered Logo with Bottom Menu'),
-        ('header4', 'Header 4 - Minimal with Side Menu'),
+        ('header1', 'Header 1 - Classic'),
+        ('header2', 'Header 2 - Modern'),
+        ('header3', 'Header 3 - Minimal'),
+        ('header4', 'Header 4 - Centered'),
     ]
     FOOTER_CHOICES = [
-        ('footer1', 'Footer 1 - Dark & Modern'),
-        ('footer2', 'Footer 2 - Light & Clean'),
-        ('footer3', 'Footer 3 - App & Newsletter'),
-        ('footer4', 'Footer 4 - Bold & Primary'),
+        ('footer1', 'Footer 1 - Dark Modern'),
+        ('footer2', 'Footer 2 - Light Clean'),
+        ('footer3', 'Footer 3 - App Style'),
+        ('footer4', 'Footer 4 - Bold Primary'),
     ]
 
     site_name = models.CharField(max_length=100, default="My Shop")
     site_logo = models.ImageField(upload_to='site/logo/', blank=True, null=True)
+    site_description = models.TextField(blank=True, default="Your trusted ecommerce partner")
     favicon = models.ImageField(upload_to='site/favicon/', blank=True, null=True)
     
     active_header = models.CharField(max_length=20, choices=HEADER_CHOICES, default='header1')
@@ -37,9 +38,9 @@ class SiteSettings(models.Model):
     footer_text_color = models.CharField(max_length=7, default='#ffffff')
     
     # Contact Info
-    support_email = models.EmailField(default="support@myshop.com")
-    phone_number = models.CharField(max_length=20, default="+1234567890")
-    address = models.TextField(default="Your address here")
+    contact_email = models.EmailField(default="support@myshop.com")
+    contact_phone = models.CharField(max_length=20, default="+1234567890")
+    address = models.TextField(default="123 Business Street, City, Country")
     
     # Social Media
     facebook_url = models.URLField(blank=True)
@@ -79,7 +80,6 @@ class SiteSettings(models.Model):
                 settings = cls.objects.create()
             cache.set('site_settings', settings, 60 * 15)  # Cache for 15 minutes
         return settings
-
 
 class HeaderTemplate(models.Model):
     name = models.CharField(max_length=100)

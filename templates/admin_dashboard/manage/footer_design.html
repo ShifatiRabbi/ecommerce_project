@@ -1,0 +1,256 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Footer Design - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Footer Design Manager</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button class="btn btn-sm btn-success" id="save-footer-design">
+            <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Footer Templates -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Footer Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="footer-templates">
+                    {% for footer in footer_templates %}
+                    <div class="footer-template-card {% if footer.is_active %}active{% endif %}" 
+                         data-footer-id="{{ footer.id }}">
+                        <div class="template-preview">
+                            <div class="template-footer">
+                                <div class="footer-content">
+                                    <div class="footer-sections">
+                                        <div class="section"></div>
+                                        <div class="section"></div>
+                                        <div class="section"></div>
+                                        <div class="section"></div>
+                                    </div>
+                                    <div class="footer-bottom"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <h6>{{ footer.name }}</h6>
+                            <p class="text-muted mb-2">{{ footer.description }}</p>
+                            <div class="template-actions">
+                                <button class="btn btn-sm btn-outline-success select-footer {% if footer.is_active %}d-none{% endif %}" 
+                                        data-footer-id="{{ footer.id }}">
+                                    <i class="fas fa-check me-1"></i> Select
+                                </button>
+                                <span class="badge bg-success selected-badge {% if not footer.is_active %}d-none{% endif %}">
+                                    <i class="fas fa-check me-1"></i> Active
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer Settings -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Footer Settings</h5>
+            </div>
+            <div class="card-body">
+                <form id="footer-settings-form">
+                    <div class="mb-3">
+                        <label class="form-label">Footer Background</label>
+                        <input type="color" class="form-control" name="footer_bg" 
+                               value="{{ site_settings.footer_background }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Text Color</label>
+                        <input type="color" class="form-control" name="footer_text_color" 
+                               value="{{ site_settings.footer_text_color }}">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Live Preview -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Live Preview - {{ active_footer.name }}</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="preview-container">
+                    <!-- Active Footer Preview -->
+                    <div id="footer-preview">
+                        {% include footer_template %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.footer-template-card {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.footer-template-card:hover {
+    border-color: #007bff;
+}
+
+.footer-template-card.active {
+    border-color: #28a745;
+    background-color: #f8fff9;
+}
+
+.template-preview {
+    background: #f8f9fa;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.template-footer {
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    min-height: 80px;
+}
+
+.footer-sections {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.footer-sections .section {
+    background: #e3f2fd;
+    height: 40px;
+    border-radius: 3px;
+}
+
+.footer-bottom {
+    background: #2c3e50;
+    height: 20px;
+    border-radius: 3px;
+}
+
+.preview-container {
+    min-height: 400px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.template-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Footer template selection
+    $('.select-footer').on('click', function() {
+        const footerId = $(this).data('footer-id');
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:ajax_set_active_footer" %}',
+            type: 'POST',
+            data: {
+                'footer_id': footerId,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification('Footer template activated!', 'success');
+                    
+                    // Update UI
+                    $('.footer-template-card').removeClass('active');
+                    $('.select-footer').removeClass('d-none');
+                    $('.selected-badge').addClass('d-none');
+                    
+                    $(`.footer-template-card[data-footer-id="${footerId}"]`).addClass('active');
+                    $(`.select-footer[data-footer-id="${footerId}"]`).addClass('d-none');
+                    $(`.selected-badge[data-footer-id="${footerId}"]`).removeClass('d-none');
+                    
+                    // Reload preview
+                    location.reload();
+                }
+            }
+        });
+    });
+
+    // Save footer design
+    $('#save-footer-design').on('click', function() {
+        const formData = $('#footer-settings-form').serializeArray();
+        
+        $.ajax({
+            url: '{% url "admin_dashboard:footer_design" %}',
+            type: 'POST',
+            data: {
+                'footer_background': $('#footer-settings-form input[name="footer_bg"]').val(),
+                'footer_text_color': $('#footer-settings-form input[name="footer_text_color"]').val(),
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                showNotification('Footer design saved successfully!', 'success');
+            }
+        });
+    });
+
+    // Settings form changes
+    $('#footer-settings-form input').on('change', function() {
+        updateFooterPreviewFromSettings();
+    });
+
+    function updateFooterPreviewFromSettings() {
+        const bgColor = $('#footer-settings-form input[name="footer_bg"]').val();
+        const textColor = $('#footer-settings-form input[name="footer_text_color"]').val();
+        
+        // Apply styles to preview
+        $('#footer-preview').css({
+            '--footer-bg': bgColor,
+            '--footer-text': textColor
+        });
+    }
+
+    // Initialize
+    updateFooterPreviewFromSettings();
+});
+
+function showNotification(message, type) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-info';
+    const alert = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`);
+    
+    $('.container').first().prepend(alert);
+    
+    setTimeout(() => {
+        alert.alert('close');
+    }, 3000);
+}
+</script>
+{% endblock %}
