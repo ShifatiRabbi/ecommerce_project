@@ -21,6 +21,8 @@ from django.contrib.sites.shortcuts import get_current_site
 from .forms import *
 from core.models import *
 from django.template.loader import render_to_string
+from .models import DefaultSiteSetting
+from .forms import DefaultSiteSettingForm
 
 def get_current_site(request):
     """Utility function to get current site"""
@@ -1781,20 +1783,66 @@ def third_party_integrations(request):
 @login_required
 @admin_required
 def basic_settings(request):
-    settings = SiteSetting.objects.first()
-    if not settings:
-        settings = SiteSetting.objects.create()
+    settings = DefaultSiteSetting.get_default_settings()
     
     if request.method == 'POST':
-        form = SiteSettingForm(request.POST, request.FILES, instance=settings)
+        form = DefaultSiteSettingForm(request.POST, request.FILES, instance=settings)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Site settings updated successfully!')
+            messages.success(request, 'Default site settings updated successfully!')
+            
+            # Clear cache
+            cache.delete('default_site_settings')
+            
             return redirect('admin_dashboard:basic_settings')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
-        form = SiteSettingForm(instance=settings)
+        form = DefaultSiteSettingForm(instance=settings)
     
-    return render(request, 'admin_dashboard/manage/basic_settings.html', {'form': form})
+    # Get current settings for preview
+    current_settings = DefaultSiteSetting.get_default_settings()
+    
+    context = {
+        'form': form,
+        'settings': current_settings,
+        'active_tab': request.GET.get('tab', 'basic')
+    }
+    return render(request, 'admin_dashboard/manage/basic_settings.html', context)
+
+@login_required
+@admin_required
+def ajax_upload_image(request):
+    """Handle AJAX image uploads for preview"""
+    if request.method == 'POST' and request.FILES:
+        file = request.FILES['file']
+        file_type = request.POST.get('type', 'logo')
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml']
+        if file.content_type not in allowed_types:
+            return JsonResponse({'success': False, 'error': 'Invalid file type'})
+        
+        # Validate file size (5MB max)
+        if file.size > 5 * 1024 * 1024:
+            return JsonResponse({'success': False, 'error': 'File size too large (max 5MB)'})
+        
+        # Save file temporarily for preview
+        import os
+        from django.conf import settings
+        from django.core.files.storage import default_storage
+        
+        filename = f"temp_{file_type}_{file.name}"
+        filepath = default_storage.save(f'temp/{filename}', file)
+        
+        return JsonResponse({
+            'success': True,
+            'url': default_storage.url(filepath),
+            'filename': filename
+        })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request'})
+
 
 @login_required
 @admin_required
@@ -2076,7 +2124,7 @@ def custom_css(request):
 @login_required
 @admin_required
 def custom_js(request):
-    settings = SiteSetting.objects.first()
+    settings = DefaultSiteSetting.objects.first()
     
     if request.method == 'POST':
         settings.custom_js = request.POST.get('custom_js', '')

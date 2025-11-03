@@ -95,13 +95,101 @@ class BlogForm(forms.ModelForm):
             'excerpt': forms.Textarea(attrs={'rows': 3}),
         }
 
-class SiteSettingForm(forms.ModelForm):
+class DefaultSiteSettingForm(forms.ModelForm):
+    # Custom fields for better UX
+    remove_site_logo = forms.BooleanField(required=False, help_text="Check to remove current logo")
+    remove_favicon = forms.BooleanField(required=False, help_text="Check to remove current favicon")
+    remove_og_image = forms.BooleanField(required=False, help_text="Check to remove current OG image")
+    
     class Meta:
-        model = SiteSetting
-        fields = ['site_name', 'site_logo', 'favicon', 'contact_email', 
-                 'contact_phone', 'address', 'facebook_pixel', 
-                 'google_analytics', 'google_tag_manager']
+        model = DefaultSiteSetting
+        fields = [
+            # Basic Information
+            'site_name', 'site_moto', 'site_slogan', 'established_year',
+            
+            # Media
+            'site_logo', 'site_logo_dark', 'favicon', 'og_image',
+            
+            # Contact Information
+            'contact_email', 'support_email', 'sales_email', 'contact_phone',
+            'whatsapp_number', 'emergency_phone',
+            
+            # Address
+            'address', 'address_short', 'latitude', 'longitude',
+            
+            # Business Hours
+            'business_hours', 'timezone',
+            
+            # Social Media
+            'facebook_url', 'twitter_url', 'instagram_url', 'linkedin_url',
+            'youtube_url', 'pinterest_url', 'tiktok_url', 'whatsapp_url', 'telegram_url',
+            
+            # SEO & Analytics
+            'meta_description', 'meta_keywords', 'google_analytics',
+            'google_tag_manager', 'facebook_pixel', 'google_site_verification', 'bing_webmaster',
+            
+            # Custom Code
+            'custom_css', 'custom_js_header', 'custom_js_footer',
+            
+            # Features & Settings
+            'enable_guest_checkout', 'enable_user_registration', 'enable_reviews',
+            'enable_wishlist', 'enable_newsletter',
+            
+            # Currency & Regional
+            'default_currency', 'currency_symbol', 'weight_unit', 'dimension_unit',
+            
+            # Maintenance
+            'maintenance_mode', 'maintenance_message',
+        ]
+        widgets = {
+            'site_slogan': forms.Textarea(attrs={'rows': 3}),
+            'address': forms.Textarea(attrs={'rows': 3}),
+            'business_hours': forms.Textarea(attrs={'rows': 3}),
+            'meta_description': forms.Textarea(attrs={'rows': 3}),
+            'meta_keywords': forms.Textarea(attrs={'rows': 3}),
+            'maintenance_message': forms.Textarea(attrs={'rows': 3}),
+            'custom_css': forms.Textarea(attrs={'rows': 8, 'class': 'code-editor'}),
+            'custom_js_header': forms.Textarea(attrs={'rows': 6, 'class': 'code-editor'}),
+            'custom_js_footer': forms.Textarea(attrs={'rows': 6, 'class': 'code-editor'}),
+            'google_analytics': forms.TextInput(attrs={'placeholder': 'G-XXXXXXXXXX'}),
+            'established_year': forms.NumberInput(attrs={'min': 1900, 'max': 2100}),
+        }
+        help_texts = {
+            'google_analytics': 'Enter your GA4 Measurement ID (e.g., G-XXXXXXXXXX)',
+            'timezone': 'Select your timezone from <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones" target="_blank">TZ database</a>',
+            'latitude': 'For map integration (e.g., 40.7128)',
+            'longitude': 'For map integration (e.g., -74.0060)',
+        }
 
+    def clean_established_year(self):
+        year = self.cleaned_data.get('established_year')
+        if year and (year < 1900 or year > 2100):
+            raise forms.ValidationError("Please enter a valid year between 1900 and 2100.")
+        return year
+
+    def clean_contact_phone(self):
+        phone = self.cleaned_data.get('contact_phone')
+        # Basic phone validation
+        if phone and not any(char.isdigit() for char in phone):
+            raise forms.ValidationError("Please enter a valid phone number.")
+        return phone
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        
+        # Handle file removals
+        if self.cleaned_data.get('remove_site_logo') and instance.site_logo:
+            instance.site_logo.delete(save=False)
+        if self.cleaned_data.get('remove_favicon') and instance.favicon:
+            instance.favicon.delete(save=False)
+        if self.cleaned_data.get('remove_og_image') and instance.og_image:
+            instance.og_image.delete(save=False)
+        
+        if commit:
+            instance.save()
+        return instance
+
+    
 class BannerForm(forms.ModelForm):
     class Meta:
         model = Banner

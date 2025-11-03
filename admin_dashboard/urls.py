@@ -99,11 +99,6 @@ urlpatterns = [
     path('manage/custom-js/', views.custom_js, name='custom_js'),
     path('manage/banners/', views.banner_list, name='all_banners'),
     path('manage/banners/add/', views.add_banner, name='add_banner'),
-    # AJAX endpoints
-    path('ajax/set-active-header/', views.ajax_set_active_header, name='ajax_set_active_header'),
-    path('ajax/set-active-footer/', views.ajax_set_active_footer, name='ajax_set_active_footer'),
-    path('ajax/save-header-settings/', views.ajax_save_header_settings, name='ajax_save_header_settings'),
-    path('ajax/preview-header/', views.ajax_preview_header, name='ajax_preview_header'),
     
     # Backend Customization
     path('customization/orders/', views.orders_customize, name='orders_customize'),
@@ -121,6 +116,11 @@ urlpatterns = [
     path('profile/logout/', views.admin_logout, name='admin_logout'),
     
     # AJAX endpoints
+    path('ajax/upload-image/', views.ajax_upload_image, name='ajax_upload_image'),
+    path('ajax/set-active-header/', views.ajax_set_active_header, name='ajax_set_active_header'),
+    path('ajax/set-active-footer/', views.ajax_set_active_footer, name='ajax_set_active_footer'),
+    path('ajax/save-header-settings/', views.ajax_save_header_settings, name='ajax_save_header_settings'),
+    path('ajax/preview-header/', views.ajax_preview_header, name='ajax_preview_header'),
     path('ajax/update-order-status/', views.update_order_status, name='update_order_status'),
     path('ajax/update-inventory/', views.update_inventory, name='update_inventory'),
     path('ajax/get-order-stats/', views.get_order_stats, name='get_order_stats'),

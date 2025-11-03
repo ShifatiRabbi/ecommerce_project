@@ -1,0 +1,648 @@
+{% extends 'admin_dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Basic Settings - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Basic Settings</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="submit" form="settings-form" class="btn btn-sm btn-success">
+            <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Navigation Tabs -->
+    <div class="col-lg-3">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Settings Categories</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'basic' %}active{% endif %}" 
+                       href="#basic" data-bs-toggle="tab">
+                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'media' %}active{% endif %}" 
+                       href="#media" data-bs-toggle="tab">
+                        <i class="fas fa-images me-2"></i>Media & Branding
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'contact' %}active{% endif %}" 
+                       href="#contact" data-bs-toggle="tab">
+                        <i class="fas fa-address-book me-2"></i>Contact Info
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'social' %}active{% endif %}" 
+                       href="#social" data-bs-toggle="tab">
+                        <i class="fas fa-share-alt me-2"></i>Social Media
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'seo' %}active{% endif %}" 
+                       href="#seo" data-bs-toggle="tab">
+                        <i class="fas fa-search me-2"></i>SEO & Analytics
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'custom' %}active{% endif %}" 
+                       href="#custom" data-bs-toggle="tab">
+                        <i class="fas fa-code me-2"></i>Custom Code
+                    </a>
+                    <a class="list-group-item list-group-item-action {% if active_tab == 'features' %}active{% endif %}" 
+                       href="#features" data-bs-toggle="tab">
+                        <i class="fas fa-cog me-2"></i>Features & Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Preview -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">Quick Preview</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if settings.site_logo %}
+                    <img src="{{ settings.site_logo.url }}" alt="Logo Preview" class="img-fluid" style="max-height: 60px;">
+                    {% else %}
+                    <div class="bg-light rounded p-3">
+                        <small class="text-muted">No logo uploaded</small>
+                    </div>
+                    {% endif %}
+                </div>
+                <h6 class="mb-1">{{ settings.site_name }}</h6>
+                {% if settings.site_moto %}
+                <p class="text-muted small mb-2">{{ settings.site_moto }}</p>
+                {% endif %}
+                <div class="small text-muted">
+                    <div><i class="fas fa-phone me-1"></i> {{ settings.contact_phone }}</div>
+                    <div><i class="fas fa-envelope me-1"></i> {{ settings.contact_email }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Content -->
+    <div class="col-lg-9">
+        <form id="settings-form" method="post" enctype="multipart/form-data" class="tab-content">
+            {% csrf_token %}
+            
+            <!-- Basic Information Tab -->
+            <div class="tab-pane fade {% if active_tab == 'basic' %}show active{% endif %}" id="basic">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.site_name.label }} *</label>
+                                {{ form.site_name }}
+                                {% if form.site_name.errors %}
+                                <div class="text-danger small">{{ form.site_name.errors }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.established_year.label }}</label>
+                                {{ form.established_year }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.site_moto.label }}</label>
+                                {{ form.site_moto }}
+                                <div class="form-text">A short tagline that appears in headers and footers</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.site_slogan.label }}</label>
+                                {{ form.site_slogan }}
+                                <div class="form-text">A longer description for about pages and meta descriptions</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Media & Branding Tab -->
+            <div class="tab-pane fade {% if active_tab == 'media' %}show active{% endif %}" id="media">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Media & Branding</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4">
+                            <!-- Site Logo -->
+                            <div class="col-md-6">
+                                <div class="image-upload-card">
+                                    <label class="form-label">{{ form.site_logo.label }}</label>
+                                    <div class="image-preview mb-2">
+                                        {% if settings.site_logo %}
+                                        <img src="{{ settings.site_logo.url }}" alt="Current Logo" class="img-thumbnail" style="max-height: 100px;">
+                                        {% else %}
+                                        <div class="bg-light rounded p-4 text-center">
+                                            <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted small mb-0">No logo uploaded</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <input type="file" name="site_logo" class="form-control image-upload-input" accept="image/*">
+                                    {% if settings.site_logo %}
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" name="remove_site_logo" class="form-check-input" id="remove_logo">
+                                        <label class="form-check-label text-danger" for="remove_logo">
+                                            Remove current logo
+                                        </label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Favicon -->
+                            <div class="col-md-6">
+                                <div class="image-upload-card">
+                                    <label class="form-label">{{ form.favicon.label }}</label>
+                                    <div class="image-preview mb-2">
+                                        {% if settings.favicon %}
+                                        <img src="{{ settings.favicon.url }}" alt="Current Favicon" class="img-thumbnail" style="max-height: 100px;">
+                                        {% else %}
+                                        <div class="bg-light rounded p-4 text-center">
+                                            <i class="fas fa-flag fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted small mb-0">No favicon uploaded</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <input type="file" name="favicon" class="form-control image-upload-input" accept="image/*">
+                                    {% if settings.favicon %}
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" name="remove_favicon" class="form-check-input" id="remove_favicon">
+                                        <label class="form-check-label text-danger" for="remove_favicon">
+                                            Remove current favicon
+                                        </label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Dark Logo -->
+                            <div class="col-md-6">
+                                <div class="image-upload-card">
+                                    <label class="form-label">{{ form.site_logo_dark.label }}</label>
+                                    <div class="image-preview mb-2">
+                                        {% if settings.site_logo_dark %}
+                                        <img src="{{ settings.site_logo_dark.url }}" alt="Current Dark Logo" class="img-thumbnail" style="max-height: 100px;">
+                                        {% else %}
+                                        <div class="bg-light rounded p-4 text-center">
+                                            <i class="fas fa-moon fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted small mb-0">No dark logo uploaded</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <input type="file" name="site_logo_dark" class="form-control image-upload-input" accept="image/*">
+                                </div>
+                            </div>
+
+                            <!-- OG Image -->
+                            <div class="col-md-6">
+                                <div class="image-upload-card">
+                                    <label class="form-label">{{ form.og_image.label }}</label>
+                                    <div class="image-preview mb-2">
+                                        {% if settings.og_image %}
+                                        <img src="{{ settings.og_image.url }}" alt="Current OG Image" class="img-thumbnail" style="max-height: 100px;">
+                                        {% else %}
+                                        <div class="bg-light rounded p-4 text-center">
+                                            <i class="fas fa-share-alt fa-2x text-muted mb-2"></i>
+                                            <p class="text-muted small mb-0">No OG image uploaded</p>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    <input type="file" name="og_image" class="form-control image-upload-input" accept="image/*">
+                                    {% if settings.og_image %}
+                                    <div class="form-check mt-2">
+                                        <input type="checkbox" name="remove_og_image" class="form-check-input" id="remove_og_image">
+                                        <label class="form-check-label text-danger" for="remove_og_image">
+                                            Remove current OG image
+                                        </label>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Information Tab -->
+            <div class="tab-pane fade {% if active_tab == 'contact' %}show active{% endif %}" id="contact">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Contact Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.contact_email.label }} *</label>
+                                {{ form.contact_email }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.contact_phone.label }} *</label>
+                                {{ form.contact_phone }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.support_email.label }}</label>
+                                {{ form.support_email }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.sales_email.label }}</label>
+                                {{ form.sales_email }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.whatsapp_number.label }}</label>
+                                {{ form.whatsapp_number }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.emergency_phone.label }}</label>
+                                {{ form.emergency_phone }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.address.label }} *</label>
+                                {{ form.address }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.address_short.label }}</label>
+                                {{ form.address_short }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.timezone.label }}</label>
+                                {{ form.timezone }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.latitude.label }}</label>
+                                {{ form.latitude }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.longitude.label }}</label>
+                                {{ form.longitude }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.business_hours.label }}</label>
+                                {{ form.business_hours }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Social Media Tab -->
+            <div class="tab-pane fade {% if active_tab == 'social' %}show active{% endif %}" id="social">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Social Media Links</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            {% for field in form %}
+                            {% if 'url' in field.name and 'whatsapp' not in field.name and 'telegram' not in field.name %}
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fab fa-{{ field.name|cut:'_url' }} me-2 text-primary"></i>
+                                    {{ field.label }}
+                                </label>
+                                {{ field }}
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fab fa-whatsapp me-2 text-success"></i>
+                                    {{ form.whatsapp_url.label }}
+                                </label>
+                                {{ form.whatsapp_url }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fab fa-telegram me-2 text-info"></i>
+                                    {{ form.telegram_url.label }}
+                                </label>
+                                {{ form.telegram_url }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEO & Analytics Tab -->
+            <div class="tab-pane fade {% if active_tab == 'seo' %}show active{% endif %}" id="seo">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">SEO & Analytics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">{{ form.meta_description.label }}</label>
+                                {{ form.meta_description }}
+                                <div class="form-text">Recommended: 150-160 characters</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.meta_keywords.label }}</label>
+                                {{ form.meta_keywords }}
+                                <div class="form-text">Comma-separated keywords</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.google_analytics.label }}</label>
+                                {{ form.google_analytics }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.google_tag_manager.label }}</label>
+                                {{ form.google_tag_manager }}
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.facebook_pixel.label }}</label>
+                                {{ form.facebook_pixel }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.google_site_verification.label }}</label>
+                                {{ form.google_site_verification }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">{{ form.bing_webmaster.label }}</label>
+                                {{ form.bing_webmaster }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Custom Code Tab -->
+            <div class="tab-pane fade {% if active_tab == 'custom' %}show active{% endif %}" id="custom">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Custom Code</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">{{ form.custom_css.label }}</label>
+                                {{ form.custom_css }}
+                                <div class="form-text">Custom CSS styles that will be applied site-wide</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.custom_js_header.label }}</label>
+                                {{ form.custom_js_header }}
+                                <div class="form-text">JavaScript code added in the &lt;head&gt; section</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">{{ form.custom_js_footer.label }}</label>
+                                {{ form.custom_js_footer }}
+                                <div class="form-text">JavaScript code added before closing &lt;/body&gt; tag</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features & Settings Tab -->
+            <div class="tab-pane fade {% if active_tab == 'features' %}show active{% endif %}" id="features">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Features & Settings</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Website Features</h6>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.enable_guest_checkout }}
+                                    <label class="form-check-label" for="{{ form.enable_guest_checkout.id_for_label }}">
+                                        {{ form.enable_guest_checkout.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.enable_user_registration }}
+                                    <label class="form-check-label" for="{{ form.enable_user_registration.id_for_label }}">
+                                        {{ form.enable_user_registration.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.enable_reviews }}
+                                    <label class="form-check-label" for="{{ form.enable_reviews.id_for_label }}">
+                                        {{ form.enable_reviews.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.enable_wishlist }}
+                                    <label class="form-check-label" for="{{ form.enable_wishlist.id_for_label }}">
+                                        {{ form.enable_wishlist.label }}
+                                    </label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    {{ form.enable_newsletter }}
+                                    <label class="form-check-label" for="{{ form.enable_newsletter.id_for_label }}">
+                                        {{ form.enable_newsletter.label }}
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Regional Settings</h6>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">{{ form.default_currency.label }}</label>
+                                        {{ form.default_currency }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">{{ form.currency_symbol.label }}</label>
+                                        {{ form.currency_symbol }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">{{ form.weight_unit.label }}</label>
+                                        {{ form.weight_unit }}
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">{{ form.dimension_unit.label }}</label>
+                                        {{ form.dimension_unit }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <hr>
+                                <h6 class="mb-3">Maintenance Mode</h6>
+                                <div class="form-check form-switch mb-3">
+                                    {{ form.maintenance_mode }}
+                                    <label class="form-check-label" for="{{ form.maintenance_mode.id_for_label }}">
+                                        {{ form.maintenance_mode.label }}
+                                    </label>
+                                </div>
+                                <label class="form-label">{{ form.maintenance_message.label }}</label>
+                                {{ form.maintenance_message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.image-upload-card {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.image-upload-card:hover {
+    border-color: #007bff;
+    background-color: #f8f9fa;
+}
+
+.image-preview img {
+    max-width: 100%;
+    height: auto;
+}
+
+.code-editor {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+}
+
+.list-group-item.active {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.tab-pane {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.form-check.form-switch {
+    padding-left: 2.5em;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Tab persistence
+    $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        const target = $(e.target).attr('href');
+        history.replaceState(null, null, `?tab=${target.substring(1)}`);
+    });
+
+    // Image preview for file inputs
+    $('.image-upload-input').on('change', function() {
+        const input = this;
+        const preview = $(this).closest('.image-upload-card').find('.image-preview');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                preview.html(`<img src="${e.target.result}" class="img-thumbnail" style="max-height: 100px;">`);
+            }
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    });
+
+    // Character counters for textareas
+    $('#id_meta_description').on('input', function() {
+        const length = $(this).val().length;
+        const counter = $(this).next('.form-text');
+        counter.text(`Characters: ${length}/160`);
+        
+        if (length > 160) {
+            counter.addClass('text-danger');
+        } else {
+            counter.removeClass('text-danger');
+        }
+    });
+
+    // Initialize character counter
+    $('#id_meta_description').trigger('input');
+
+    // Form submission handling
+    $('#settings-form').on('submit', function(e) {
+        const submitBtn = $('button[type="submit"]');
+        submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Saving...');
+        
+        // You can add additional validation here
+        
+        return true;
+    });
+
+    // Auto-format URLs
+    $('input[type="url"]').on('blur', function() {
+        let url = $(this).val();
+        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+            $(this).val('https://' + url);
+        }
+    });
+
+    // Timezone suggestions
+    $('#id_timezone').on('input', function() {
+        // You can integrate with a timezone API here
+        const commonTimezones = [
+            'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+            'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Asia/Dubai', 'Asia/Kolkata',
+            'Asia/Singapore', 'Asia/Tokyo', 'Australia/Sydney'
+        ];
+        
+        // Simple autocomplete for common timezones
+        const value = $(this).val().toLowerCase();
+        if (value.length > 2) {
+            const matches = commonTimezones.filter(tz => tz.toLowerCase().includes(value));
+            // You can show these in a dropdown
+        }
+    });
+
+    // Maintenance mode warning
+    $('#id_maintenance_mode').on('change', function() {
+        if ($(this).is(':checked')) {
+            if (!confirm('Enabling maintenance mode will make your site inaccessible to visitors. Are you sure?')) {
+                $(this).prop('checked', false);
+            }
+        }
+    });
+
+    // Currency symbol auto-update
+    $('#id_default_currency').on('change', function() {
+        const currency = $(this).val();
+        const symbolMap = {
+            'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
+            'CAD': 'C$', 'AUD': 'A$', 'INR': '₹', 'BDT': '৳'
+        };
+        
+        if (symbolMap[currency]) {
+            $('#id_currency_symbol').val(symbolMap[currency]);
+        }
+    });
+});
+
+// Show notification function
+function showNotification(message, type = 'success') {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const alert = $(`<div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>`);
+    
+    $('.container').first().prepend(alert);
+    
+    setTimeout(() => {
+        alert.alert('close');
+    }, 5000);
+}
+</script>
+{% endblock %}

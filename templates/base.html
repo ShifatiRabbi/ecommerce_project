@@ -4,36 +4,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ site_settings.site_name }}{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}{{ site_settings.meta_description|default:'Your trusted ecommerce partner' }}{% endblock %}">
-    <meta name="keywords" content="{% block meta_keywords %}{{ site_settings.meta_keywords|default:'ecommerce, shopping, online store' }}{% endblock %}">
     
-    <!-- SEO Meta Tags -->
-    <meta property="og:title" content="{% block og_title %}{{ site_settings.site_name }}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}{{ site_settings.meta_description|default:'Your trusted ecommerce partner' }}{% endblock %}">
+    <!-- Basic SEO -->
+    <title>{% block title %}{{ default_settings.site_name }}{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{{ default_settings.meta_description|default:'Your trusted ecommerce partner' }}{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}{{ default_settings.meta_keywords|default:'ecommerce, shopping, online store' }}{% endblock %}">
+    
+    <!-- Open Graph / Social -->
+    <meta property="og:title" content="{% block og_title %}{{ default_settings.site_name }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ default_settings.meta_description|default:'Your trusted ecommerce partner' }}{% endblock %}">
     <meta property="og:image" content="{% block og_image %}{% static 'images/og-image.jpg' %}{% endblock %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
     <meta name="twitter:card" content="summary_large_image">
     
     <!-- Favicon -->
-    {% if site_settings.favicon %}
-    <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
+    {% if default_settings.favicon %}
+        <link rel="icon" type="image/x-icon" href="{{ default_settings.favicon.url }}">
     {% else %}
-    <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
+        <link rel="icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}">
     {% endif %}
     
-    <!-- Bootstrap 5 -->
+    <!-- Bootstrap / Fonts / Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
     <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
     
-    <!-- Header & Footer Styles -->
+    <!-- Header & Footer Theme Styles -->
     <style>
         :root {
             --header-bg: {{ site_settings.header_background }};
@@ -43,7 +43,7 @@
             --footer-bg: {{ site_settings.footer_background }};
             --footer-text: {{ site_settings.footer_text_color }};
         }
-        
+
         {% if site_settings.sticky_header %}
         .website-header {
             position: sticky;
@@ -52,7 +52,7 @@
         }
         {% endif %}
     </style>
-    
+
     <!-- Custom CSS from Admin -->
     {% if site_settings.custom_css %}
     <style>
@@ -62,10 +62,11 @@
     
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
-    <!-- Header Section -->
+    <!-- Header -->
     {% include header_template %}
-    
+
     <!-- Messages -->
     {% if messages %}
     <div class="container mt-3">
@@ -77,16 +78,22 @@
         {% endfor %}
     </div>
     {% endif %}
-    
+
     <!-- Main Content -->
     <main>
         {% block content %}{% endblock %}
     </main>
-    
+
     <!-- Footer -->
     {% include footer_template %}
-    
-    <!-- Back to Top Button -->
+
+    <!-- Contact Info (using default_settings) -->
+    <div class="text-center py-3 small text-muted">
+        <p>📞 {{ default_settings.contact_phone }}</p>
+        <p>📧 {{ default_settings.contact_email }}</p>
+    </div>
+
+    <!-- Back to Top -->
     <button id="backToTop" class="back-to-top">
         <i class="fas fa-chevron-up"></i>
     </button>

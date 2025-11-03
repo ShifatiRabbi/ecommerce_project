@@ -1,12 +1,12 @@
-from .models import SiteSetting
+from .models import DefaultSiteSetting
 
 def admin_settings(request):
     """
     Add admin-related settings to all admin templates
     """
-    settings = SiteSetting.objects.first()
+    settings = DefaultSiteSetting.objects.first()
     if not settings:
-        settings = SiteSetting.objects.create()
+        settings = DefaultSiteSetting.objects.create()
     
     return {
         'admin_settings': settings,

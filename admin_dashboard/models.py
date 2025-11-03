@@ -3,6 +3,8 @@ from django.contrib.auth.models import User
 from shop.models import Product, Category
 from cart.models import Order
 import uuid
+from django.core.cache import cache
+from django.utils.text import slugify
 
 class Brand(models.Model):
     name = models.CharField(max_length=100)
@@ -296,24 +298,107 @@ class LandingPage(models.Model):
     def __str__(self):
         return self.title
 
-class SiteSetting(models.Model):
-    site_name = models.CharField(max_length=100)
-    site_logo = models.ImageField(upload_to='site/')
-    favicon = models.ImageField(upload_to='site/')
-    contact_email = models.EmailField()
-    contact_phone = models.CharField(max_length=20)
-    address = models.TextField()
-    facebook_pixel = models.TextField(blank=True)
-    google_analytics = models.TextField(blank=True)
+class DefaultSiteSetting(models.Model):
+    # Basic Information
+    site_name = models.CharField(max_length=100, default="My Shop")
+    site_moto = models.CharField(max_length=200, blank=True, help_text="Short tagline or motto")
+    site_slogan = models.TextField(blank=True, help_text="Longer description or slogan")
+    established_year = models.PositiveIntegerField(null=True, blank=True, help_text="Year business was established")
+    
+    # Media
+    site_logo = models.ImageField(upload_to='site/logo/', blank=True, null=True)
+    site_logo_dark = models.ImageField(upload_to='site/logo/', blank=True, null=True, help_text="Logo for dark backgrounds")
+    favicon = models.ImageField(upload_to='site/favicon/', blank=True, null=True)
+    og_image = models.ImageField(upload_to='site/og/', blank=True, null=True, help_text="Open Graph image for social sharing")
+    
+    # Contact Information
+    contact_email = models.EmailField(default="support@myshop.com")
+    support_email = models.EmailField(blank=True, help_text="Support email address")
+    sales_email = models.EmailField(blank=True, help_text="Sales email address")
+    contact_phone = models.CharField(max_length=20, default="+1234567890")
+    whatsapp_number = models.CharField(max_length=20, blank=True)
+    emergency_phone = models.CharField(max_length=20, blank=True)
+    
+    # Address
+    address = models.TextField(default="123 Business Street, City, Country")
+    address_short = models.CharField(max_length=100, blank=True, help_text="Short address for headers")
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Map latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True, help_text="Map longitude")
+    
+    # Business Hours
+    business_hours = models.TextField(blank=True, help_text="Format: Monday-Friday: 9AM-6PM")
+    timezone = models.CharField(max_length=50, default="UTC", help_text="e.g., America/New_York")
+    
+    # Social Media
+    facebook_url = models.URLField(blank=True)
+    twitter_url = models.URLField(blank=True)
+    instagram_url = models.URLField(blank=True)
+    linkedin_url = models.URLField(blank=True)
+    youtube_url = models.URLField(blank=True)
+    pinterest_url = models.URLField(blank=True)
+    tiktok_url = models.URLField(blank=True)
+    whatsapp_url = models.URLField(blank=True)
+    telegram_url = models.URLField(blank=True)
+    
+    # SEO & Analytics
+    meta_description = models.TextField(blank=True)
+    meta_keywords = models.TextField(blank=True)
+    google_analytics = models.TextField(blank=True, help_text="GA4 Measurement ID")
     google_tag_manager = models.TextField(blank=True)
+    facebook_pixel = models.TextField(blank=True)
+    google_site_verification = models.CharField(max_length=100, blank=True)
+    bing_webmaster = models.CharField(max_length=100, blank=True)
+    
+    # Custom Code
     custom_css = models.TextField(blank=True)
-    custom_js = models.TextField(blank=True)
+    custom_js_header = models.TextField(blank=True, help_text="JavaScript added in head")
+    custom_js_footer = models.TextField(blank=True, help_text="JavaScript added before closing body")
     
-    def __str__(self):
-        return "Site Settings"
+    # Features & Settings
+    enable_guest_checkout = models.BooleanField(default=True)
+    enable_user_registration = models.BooleanField(default=True)
+    enable_reviews = models.BooleanField(default=True)
+    enable_wishlist = models.BooleanField(default=True)
+    enable_newsletter = models.BooleanField(default=True)
     
+    # Currency & Regional
+    default_currency = models.CharField(max_length=3, default="USD")
+    currency_symbol = models.CharField(max_length=5, default="$")
+    weight_unit = models.CharField(max_length=10, default="kg", choices=[('kg', 'Kilograms'), ('lb', 'Pounds')])
+    dimension_unit = models.CharField(max_length=10, default="cm", choices=[('cm', 'Centimeters'), ('in', 'Inches')])
+    
+    # Maintenance
+    maintenance_mode = models.BooleanField(default=False)
+    maintenance_message = models.TextField(blank=True, default="We're currently performing maintenance. Please check back soon.")
+    
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Default Site Setting"
+        verbose_name_plural = "Default Site Settings"
+
     def save(self, *args, **kwargs):
+        # Clear cache when settings are updated
+        cache.delete('default_site_settings')
         # Ensure only one instance exists
-        if SiteSetting.objects.exists() and not self.pk:
-            return
+        if not self.pk and DefaultSiteSetting.objects.exists():
+            # Update existing instance instead of creating new one
+            existing = DefaultSiteSetting.objects.first()
+            self.pk = existing.pk
         super().save(*args, **kwargs)
+
+    def __str__(self):
+        return "Default Site Settings"
+
+    @classmethod
+    def get_default_settings(cls):
+        """Get default site settings with caching"""
+        settings = cache.get('default_site_settings')
+        if not settings:
+            settings = cls.objects.first()
+            if not settings:
+                settings = cls.objects.create()
+            cache.set('default_site_settings', settings, 60 * 15)  # Cache for 15 minutes
+        return settings
+    
+
